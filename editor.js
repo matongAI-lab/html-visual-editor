@@ -324,7 +324,8 @@
     if (!el) return true
     if (!el.closest) { el = el.parentElement; if (!el || !el.closest) return true }
     return el.id === PREFIX + '-root' || !!el.closest('#' + PREFIX + '-root') ||
-           !!el.closest('.' + PREFIX + '-toggle')
+           !!el.closest('.' + PREFIX + '-toggle') ||
+           el.hasAttribute('data-ve-ui') || !!el.closest('[data-ve-ui]')
   }
 
   function elPath(el) {
@@ -822,6 +823,9 @@
     }
     pushHistory('text')
     state.textEditing = target
+    if (!target.hasAttribute('data-ve-prev-contenteditable')) {
+      target.setAttribute('data-ve-prev-contenteditable', target.hasAttribute('contenteditable') ? target.getAttribute('contenteditable') : '__ve_absent')
+    }
     target.setAttribute('contenteditable', 'true')
     target.setAttribute('data-ve-editing', '1')
     target.focus()
@@ -833,11 +837,22 @@
   function finishTextEdit() {
     var target = state.textEditing
     if (!target) return
-    target.removeAttribute('contenteditable')
+    restoreContenteditable(target)
     target.removeAttribute('data-ve-editing')
+    target.removeAttribute('data-ve-prev-contenteditable')
     state.textEditing = null
     if (state.selected === target) updateSelOverlay()
     showToast('文字已更新')
+  }
+
+  function restoreContenteditable(el) {
+    if (!el || !el.hasAttribute('data-ve-prev-contenteditable')) {
+      if (el) el.removeAttribute('contenteditable')
+      return
+    }
+    var prev = el.getAttribute('data-ve-prev-contenteditable')
+    if (prev === '__ve_absent') el.removeAttribute('contenteditable')
+    else el.setAttribute('contenteditable', prev)
   }
 
   function reloadPage() {
@@ -1410,17 +1425,34 @@
   // ========== Export ==========
 
   function exportHTML() {
+    finishTextEdit()
     var clone = document.documentElement.cloneNode(true)
-    var r = clone.querySelector('#' + PREFIX + '-root')
-    if (r) r.remove()
-    each(clone.querySelectorAll('.' + PREFIX + '-toggle'), removeNode)
-    each(clone.querySelectorAll('style[data-ve]'), removeNode)
-    each(clone.querySelectorAll('script[data-ve]'), removeNode)
-    each(clone.querySelectorAll('[data-ve-editing]'), function (e) {
-      e.removeAttribute('data-ve-editing')
-      e.removeAttribute('contenteditable')
-    })
+    cleanEditorArtifacts(clone)
     return '<!DOCTYPE html>\n' + clone.outerHTML
+  }
+
+  function cleanEditorArtifacts(root) {
+    var editorSrc = getEditorSrc()
+    var rootEl = root.querySelector('#' + PREFIX + '-root')
+    if (rootEl) rootEl.remove()
+    each(root.querySelectorAll('.' + PREFIX + '-toggle'), removeNode)
+    each(root.querySelectorAll('style[data-ve], script[data-ve]'), removeNode)
+    each(root.querySelectorAll('script[src]'), function (script) {
+      if (isEditorScript(script.getAttribute('src'), editorSrc)) removeNode(script)
+    })
+    each(root.querySelectorAll('[data-ve-editing], [data-ve-prev-contenteditable]'), function (el) {
+      restoreContenteditable(el)
+      el.removeAttribute('data-ve-editing')
+      el.removeAttribute('data-ve-prev-contenteditable')
+    })
+  }
+
+  function isEditorScript(src, editorSrc) {
+    if (!src) return false
+    var absolute
+    try { absolute = new URL(src, window.location.href).href }
+    catch (e) { absolute = src }
+    return absolute === editorSrc || /(^|\/)editor\.js(?:[?#].*)?$/i.test(absolute)
   }
 
   function copyHTML() {
@@ -1459,11 +1491,22 @@
     var url = URL.createObjectURL(blob)
     var a = document.createElement('a'); a.href = url
     a.download = 'page-' + Date.now() + '.html'
-    a.style.display = 'none'
+    a.setAttribute('data-ve-ui', '1')
+    a.style.cssText = 'position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0'
     document.body.appendChild(a)
-    a.click()
-    removeNode(a)
-    setTimeout(function () { URL.revokeObjectURL(url) }, 100)
+    try {
+      if ('download' in a) {
+        a.click()
+      } else {
+        window.open(url, '_blank')
+      }
+    } catch (e) {
+      window.location.href = url
+    }
+    setTimeout(function () {
+      removeNode(a)
+      URL.revokeObjectURL(url)
+    }, 1000)
     showToast('已下载')
   }
 

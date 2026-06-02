@@ -1,5 +1,6 @@
 const { test, expect } = require('@playwright/test')
 const { createStaticServer } = require('../scripts/serve')
+const fs = require('fs')
 
 let server
 let baseURL
@@ -96,6 +97,90 @@ test('hides pager when no reliable multi-page structure exists', async ({ page }
   await page.locator('#btn-start').click()
   await page.locator('.__ve-toggle').click()
   await expect(page.locator('.__ve-pager')).toHaveClass(/hidden/)
+})
+
+test('downloads a clean html export', async ({ page }) => {
+  await page.goto(`${baseURL}/index.html`)
+  await page.getByRole('tab', { name: '粘贴代码' }).click()
+  await page.locator('#html-input').fill(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>body { margin: 0; padding-top: 160px; font-family: sans-serif; } h1 { font-size: 42px; }</style>
+</head>
+<body>
+  <main>
+    <h1>Download regression</h1>
+    <p contenteditable="">Native editable text</p>
+  </main>
+</body>
+</html>`)
+
+  await page.locator('#btn-start').click()
+  await page.locator('.__ve-toggle').click()
+  await page.locator('h1').click({ position: { x: 8, y: 8 } })
+  await page.getByText('编辑文字').click()
+
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByText('下载 HTML').click()
+  const download = await downloadPromise
+  expect(await download.failure()).toBeNull()
+
+  const downloadPath = await download.path()
+  const html = fs.readFileSync(downloadPath, 'utf8')
+  expect(html).toContain('Download regression')
+  expect(html).not.toContain('__ve-root')
+  expect(html).not.toContain('data-ve')
+  expect(html).not.toContain('editor.js')
+  expect(html).not.toContain('contenteditable="true"')
+
+  const attrs = await page.evaluate(exported => {
+    const doc = new DOMParser().parseFromString(exported, 'text/html')
+    return {
+      headingEditable: doc.querySelector('h1').hasAttribute('contenteditable'),
+      nativeEditable: doc.querySelector('p').hasAttribute('contenteditable')
+    }
+  }, html)
+  expect(attrs.headingEditable).toBe(false)
+  expect(attrs.nativeEditable).toBe(true)
+})
+
+test('strips old editor artifacts before rendering pasted html', async ({ page }) => {
+  await page.goto(`${baseURL}/index.html`)
+  await page.getByRole('tab', { name: '粘贴代码' }).click()
+  await page.locator('#html-input').fill(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style data-ve="1">body { display: none !important; }</style>
+  <style>
+    body { margin: 0; font-family: sans-serif; }
+    .layout-probe { display: grid; grid-template-columns: 120px 1fr; gap: 24px; padding: 40px; }
+  </style>
+</head>
+<body>
+  <div id="__ve-root"></div>
+  <main class="layout-probe">
+    <h1 data-ve-editing="1" data-ve-prev-contenteditable="__ve_absent" contenteditable="true">Layout regression</h1>
+    <p contenteditable="">Native editable text</p>
+  </main>
+  <script src="editor.js" data-ve="1"></script>
+</body>
+</html>`)
+
+  await page.locator('#btn-start').click()
+  await expect(page.locator('h1')).toContainText('Layout regression')
+
+  const result = await page.evaluate(() => ({
+    bodyDisplay: getComputedStyle(document.body).display,
+    gridDisplay: getComputedStyle(document.querySelector('.layout-probe')).display,
+    headingEditable: document.querySelector('h1').hasAttribute('contenteditable'),
+    nativeEditable: document.querySelector('p').hasAttribute('contenteditable')
+  }))
+  expect(result.bodyDisplay).not.toBe('none')
+  expect(result.gridDisplay).toBe('grid')
+  expect(result.headingEditable).toBe(false)
+  expect(result.nativeEditable).toBe(true)
 })
 
 test('next page scrolls an inner page container', async ({ page }) => {

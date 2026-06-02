@@ -196,12 +196,19 @@
 
   function stripEditorArtifacts(html) {
     var doc = new DOMParser().parseFromString(html, 'text/html')
-    Array.prototype.forEach.call(doc.querySelectorAll('#__ve-root, .__ve-toggle, style[data-ve], script[data-ve], script[src*="editor.js"]'), function(el) {
+    Array.prototype.forEach.call(doc.querySelectorAll('#__ve-root, .__ve-toggle, style[data-ve], script[data-ve]'), function(el) {
       if (el.parentNode) el.parentNode.removeChild(el)
     })
-    Array.prototype.forEach.call(doc.querySelectorAll('[data-ve-editing]'), function(el) {
+    Array.prototype.forEach.call(doc.querySelectorAll('script[src]'), function(el) {
+      var src = el.getAttribute('src') || ''
+      if (/(^|\/)editor\.js(?:[?#].*)?$/i.test(src) && el.parentNode) el.parentNode.removeChild(el)
+    })
+    Array.prototype.forEach.call(doc.querySelectorAll('[data-ve-editing], [data-ve-prev-contenteditable]'), function(el) {
+      var prev = el.getAttribute('data-ve-prev-contenteditable')
+      if (prev && prev !== '__ve_absent') el.setAttribute('contenteditable', prev)
+      else el.removeAttribute('contenteditable')
       el.removeAttribute('data-ve-editing')
-      el.removeAttribute('contenteditable')
+      el.removeAttribute('data-ve-prev-contenteditable')
     })
     return '<!DOCTYPE html>\n' + doc.documentElement.outerHTML
   }
