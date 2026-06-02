@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>可视化编辑器 Demo</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #263238; line-height: 1.8; background: #f6f8fb; }
+  .hero { background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%); color: white; padding: 86px 32px; text-align: center; }
+  .hero h1 { font-size: 42px; line-height: 1.15; font-weight: 750; margin-bottom: 16px; letter-spacing: 0; }
+  .hero p { font-size: 18px; opacity: 0.92; max-width: 680px; margin: 0 auto; }
+  .container { max-width: 880px; margin: 0 auto; padding: 44px 24px; }
+  h2 { font-size: 28px; color: #111827; margin: 42px 0 16px; padding-bottom: 8px; border-bottom: 2px solid #e5e7eb; }
+  p { margin-bottom: 16px; font-size: 16px; }
+  .highlight { background: #fff8db; padding: 16px 20px; border-left: 4px solid #f59e0b; border-radius: 0 8px 8px 0; margin: 24px 0; }
+  .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 24px 0; }
+  .card { background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 24px; box-shadow: 0 10px 30px rgba(15,23,42,0.06); }
+  .card h3 { font-size: 18px; color: #2563eb; margin-bottom: 8px; }
+  .card p { font-size: 14px; color: #52616b; margin-bottom: 0; }
+  ul { padding-left: 24px; margin-bottom: 16px; }
+  li { margin-bottom: 8px; }
+  blockquote { border-left: 4px solid #2563eb; padding: 16px 20px; margin: 24px 0; background: #eef5ff; border-radius: 0 8px 8px 0; font-style: italic; color: #46525c; }
+  .cta { background: #111827; color: white; padding: 48px 40px; text-align: center; border-radius: 12px; margin: 40px 0; }
+  .cta h2 { color: white; border: none; margin-top: 0; }
+  .cta p { color: #aaa; }
+  .btn { display: inline-block; padding: 12px 32px; background: #2563eb; color: white; border-radius: 8px; text-decoration: none; font-weight: 650; margin-top: 16px; }
+  .footer { text-align: center; padding: 32px; color: #999; font-size: 14px; }
+  img { max-width: 100%; border-radius: 12px; margin: 24px 0; }
+  @media (max-width: 700px) {
+    .hero { padding: 58px 20px; text-align: left; }
+    .hero h1 { font-size: 32px; }
+    .hero p { font-size: 16px; }
+    .container { padding: 28px 18px; }
+    h2 { font-size: 24px; margin-top: 32px; }
+    .card-grid { grid-template-columns: 1fr; }
+    .cta { padding: 34px 22px; }
+  }
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <h1>HTML 可视化编辑器</h1>
+  <p>点击右下角蓝色按钮或按 Alt+E 进入编辑模式，直接点选页面元素进行可视化调整</p>
+</section>
+
+<div class="container">
+  <h2>这是什么？</h2>
+  <p>这是一个轻量级的 HTML 可视化编辑工具。它作为一段 JavaScript 脚本注入到任何 HTML 页面中，让页面自身具备可视化编辑能力。</p>
+  <p>不需要安装任何软件，不需要学习复杂的工具，只需要一个 <code>&lt;script&gt;</code> 标签。</p>
+
+  <div class="highlight">
+    <strong>使用方式：</strong>在任意 HTML 文件底部加入 <code>&lt;script src="editor.js"&gt;&lt;/script&gt;</code>，然后用浏览器打开即可。
+  </div>
+
+  <h2>核心功能</h2>
+  <div class="card-grid">
+    <div class="card">
+      <h3>文字调整</h3>
+      <p>字号、行高、字间距、字重、对齐方式、文字颜色——滑块和选择器直接调，所见即所得。</p>
+    </div>
+    <div class="card">
+      <h3>背景与间距</h3>
+      <p>背景颜色、不透明度、内外边距——每个属性都有直观的控件，不用写任何 CSS。</p>
+    </div>
+    <div class="card">
+      <h3>尺寸与圆角</h3>
+      <p>宽度、高度、圆角半径——数值输入或滑块调整，实时预览效果。</p>
+    </div>
+    <div class="card">
+      <h3>一键导出</h3>
+      <p>编辑完成后复制或下载修改后的 HTML，自动清除编辑器代码，输出干净的成品。</p>
+    </div>
+  </div>
+
+  <h2>快捷键</h2>
+  <ul>
+    <li><strong>Alt + E</strong> — 切换编辑模式</li>
+    <li><strong>Alt + T</strong> — 编辑选中元素的文字</li>
+    <li><strong>Alt + Z</strong> — 撤销上一步修改</li>
+    <li><strong>Alt + Y</strong> — 重做上一步撤销</li>
+    <li><strong>Alt + ← / →</strong> — 切换上一页 / 下一页</li>
+    <li><strong>Escape</strong> — 取消选中 / 退出编辑</li>
+    <li><strong>Alt + C</strong> — 复制 HTML 到剪贴板</li>
+    <li><strong>Alt + S</strong> — 下载 HTML 文件</li>
+  </ul>
+
+  <blockquote>
+    "最好的工具是让你忘记工具本身，专注于创作。"
+  </blockquote>
+
+  <h2>适用场景</h2>
+  <p>任何需要对 HTML 页面进行微调的场景：</p>
+  <ul>
+    <li>AI 生成的网页需要手动调整字号、配色</li>
+    <li>公众号文章排版的最后一步微调</li>
+    <li>PPT 转 HTML 后的布局调整</li>
+    <li>静态页面的快速原型迭代</li>
+  </ul>
+
+  <div class="cta">
+    <h2>试试看</h2>
+    <p>点击右下角的蓝色按钮，选中这段文字，试着改改字号和颜色</p>
+    <a href="#" class="btn">这是一个按钮</a>
+  </div>
+</div>
+
+<div class="footer">
+  HTML Visual Editor Demo — 所有修改实时生效，导出时自动清除编辑器代码
+</div>
+
+<script src="editor.js" data-ve="1"></script>
+</body>
+</html>

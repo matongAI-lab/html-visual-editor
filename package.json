@@ -1,0 +1,16 @@
+{
+  "name": "html-visual-editor",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A dependency-light visual editor for static HTML pages.",
+  "scripts": {
+    "check": "node --check editor.js && node scripts/check-inline-scripts.js",
+    "serve": "node scripts/serve.js",
+    "test:compat": "playwright test --project=chromium --project=webkit --project=mobile-chrome --project=mobile-safari",
+    "test:compat:firefox": "playwright test --project=firefox --workers=1",
+    "test:compat:headed": "playwright test --headed"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.44.0"
+  }
+}

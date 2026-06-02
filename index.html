@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HTML 可视化编辑器</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root { color-scheme: light; }
+  body {
+    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: #172033;
+    background: #eef3f8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+  body::before { content: ""; position: fixed; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,.86), rgba(238,243,248,.2)); pointer-events: none; }
+  .shell { position: relative; width: min(1120px, 100%); }
+  .workspace { display: grid; grid-template-columns: minmax(280px, 360px) minmax(0, 1fr); gap: 18px; align-items: stretch; }
+  .header { display: flex; flex-direction: column; justify-content: space-between; min-height: 100%; padding: 30px; border: 1px solid #d9e2ec; border-radius: 14px; background: #ffffff; box-shadow: 0 18px 45px rgba(33, 50, 74, .08); }
+  .eyebrow { display: inline-flex; width: max-content; align-items: center; gap: 8px; margin-bottom: 18px; padding: 6px 11px; border: 1px solid #d8e2ef; border-radius: 999px; color: #526173; background: #f7fafc; font-size: 12px; }
+  .logo { max-width: 320px; font-size: clamp(32px, 4vw, 48px); line-height: 1.08; font-weight: 780; letter-spacing: 0; margin-bottom: 14px; color: #111827; }
+  .subtitle { max-width: 340px; color: #5e6b7a; font-size: 15px; line-height: 1.75; }
+  .meta-list { display: grid; gap: 10px; margin-top: 30px; color: #526173; font-size: 13px; }
+  .meta-list div { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 10px; border-top: 1px solid #edf1f5; }
+  .meta-list strong { color: #172033; font-size: 13px; }
+  .card { background: #ffffff; border: 1px solid #d9e2ec; border-radius: 14px; padding: 18px; box-shadow: 0 18px 45px rgba(33, 50, 74, .08); }
+  .tabs { display: flex; gap: 6px; margin-bottom: 14px; padding: 4px; border: 1px solid #d9e2ec; border-radius: 10px; background: #f5f8fb; }
+  .tab { flex: 1; padding: 10px 16px; font-size: 14px; font-weight: 650; color: #667386; cursor: pointer; border: none; border-radius: 8px; transition: all .2s; background: transparent; font-family: inherit; }
+  .tab:hover { color: #1f2937; }
+  .tab.active { color: #0f172a; background: #ffffff; box-shadow: 0 1px 2px rgba(15,23,42,.08), inset 0 0 0 1px #e2e8f0; }
+  .tab-content { display: none; min-height: 356px; }
+  .tab-content.active { display: block; }
+  textarea { display: block; width: 100%; height: 356px; min-height: 356px; background: #0f172a; border: 1px solid #1e293b; border-radius: 10px; color: #dbeafe; font-family: "SF Mono", Monaco, Consolas, monospace; font-size: 13px; line-height: 1.65; padding: 16px; resize: vertical; outline: none; transition: border-color .2s, box-shadow .2s; box-shadow: inset 0 1px 0 rgba(255,255,255,.04); }
+  textarea:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, .16), inset 0 1px 0 rgba(255,255,255,.04); }
+  textarea::placeholder { color: #64748b; }
+  .drop-zone { min-height: 356px; height: 356px; border: 1px dashed #b7c4d3; border-radius: 10px; padding: 20px; text-align: center; color: #64748b; cursor: pointer; transition: border-color .2s, background .2s, color .2s; background: #f8fafc; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .drop-zone:hover, .drop-zone.dragover { border-color: #3b82f6; background: #eff6ff; color: #1d4ed8; }
+  .drop-zone p { margin-bottom: 8px; font-size: 16px; color: #1f2937; font-weight: 650; }
+  .drop-zone small { font-size: 12px; color: #64748b; }
+  .file-input { display: none; }
+  .status { min-height: 20px; margin-top: 12px; color: #667386; font-size: 12px; }
+  .status.ready { color: #0369a1; }
+  .status.error { color: #b91c1c; }
+  .actions { margin-top: 20px; display: flex; gap: 12px; justify-content: flex-end; align-items: center; }
+  .btn { min-height: 40px; padding: 0 20px; border-radius: 8px; font-size: 14px; font-weight: 650; cursor: pointer; border: none; font-family: inherit; transition: all .2s cubic-bezier(.4,0,.2,1); }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: #2563eb; color: white; box-shadow: 0 10px 22px rgba(37,99,235,.22); }
+  .btn-primary:hover { background: #1d4ed8; box-shadow: 0 12px 26px rgba(37,99,235,.28); }
+  .btn-primary:disabled { background: #d8e0ea; color: #7b8794; cursor: not-allowed; box-shadow: none; transform: none; }
+  .btn-secondary { background: #ffffff; color: #263244; border: 1px solid #d6e0ea; }
+  .btn-secondary:hover { background: #f8fafc; border-color: #bfccd9; }
+  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
+  .feature { padding: 13px; border: 1px solid #e2e8f0; border-radius: 10px; background: #f8fafc; color: #667386; font-size: 13px; line-height: 1.55; }
+  .feature strong { display: block; margin-bottom: 4px; color: #172033; font-size: 14px; }
+  .hint { margin-top: 14px; text-align: right; color: #7b8794; font-size: 12px; line-height: 1.7; }
+  .hint code { background: #e8eef5; color: #263244; padding: 2px 6px; border-radius: 4px; font-size: 11px; }
+  @media (max-width: 720px) {
+    body { align-items: flex-start; padding: 18px 12px; }
+    .workspace { grid-template-columns: 1fr; }
+    .header { padding: 22px; }
+    .meta-list { margin-top: 20px; }
+    .card { padding: 16px; }
+    .tab-content { min-height: 300px; }
+    textarea { height: 300px; min-height: 300px; }
+    .drop-zone { height: 300px; min-height: 300px; }
+    .actions { flex-direction: column-reverse; align-items: stretch; }
+    .btn { width: 100%; }
+    .features { grid-template-columns: 1fr; }
+    .hint { text-align: left; }
+  }
+</style>
+</head>
+<body>
+
+<main class="shell">
+  <div class="workspace">
+  <header class="header">
+    <div>
+      <div class="eyebrow">本地运行 · 无需构建</div>
+      <h1 class="logo">HTML 可视化编辑器</h1>
+      <p class="subtitle">把 HTML 放进来，直接在页面上选中元素、调整样式、编辑文字，最后导出一份干净文件。</p>
+    </div>
+    <div class="meta-list" aria-label="产品特性">
+      <div><span>运行方式</span><strong>纯前端</strong></div>
+      <div><span>编辑模式</span><strong>点选元素</strong></div>
+      <div><span>导出结果</span><strong>清除编辑器代码</strong></div>
+    </div>
+  </header>
+
+  <section class="card" aria-label="编辑入口">
+    <div class="tabs" role="tablist">
+      <button class="tab" data-tab="paste" type="button" role="tab" aria-selected="false">粘贴代码</button>
+      <button class="tab active" data-tab="file" type="button" role="tab" aria-selected="true">上传文件</button>
+    </div>
+
+    <div class="tab-content" id="tab-paste" role="tabpanel">
+      <textarea id="html-input" spellcheck="false" placeholder="在这里粘贴 HTML 代码...&#10;&#10;支持完整 HTML 文档，也支持 HTML 片段。"></textarea>
+    </div>
+
+    <div class="tab-content active" id="tab-file" role="tabpanel">
+      <div class="drop-zone" id="drop-zone">
+        <p>拖拽 HTML 文件到这里</p>
+        <small>支持 .html / .htm，也可以点击选择文件</small>
+      </div>
+      <input type="file" class="file-input" id="file-input" accept=".html,.htm,text/html">
+    </div>
+
+    <div class="status" id="status">准备好后点击“开始编辑”。</div>
+
+    <div class="actions">
+      <button class="btn btn-secondary" id="btn-demo" type="button">加载演示页面</button>
+      <button class="btn btn-primary" id="btn-start" type="button" disabled>开始编辑</button>
+    </div>
+
+    <div class="features">
+      <div class="feature"><strong>直接点选</strong>进入编辑模式后选中页面元素，右侧面板实时改样式。</div>
+      <div class="feature"><strong>可撤销</strong>支持撤销、重做、文字编辑、页面切换等常用操作。</div>
+      <div class="feature"><strong>干净导出</strong>复制或下载时会移除编辑器自身注入的代码。</div>
+    </div>
+  </section>
+  </div>
+
+  <p class="hint">也可以直接在 HTML 文件底部加入 <code>&lt;script src="editor.js"&gt;&lt;/script&gt;</code>。</p>
+</main>
+
+<script>
+(function() {
+  var textarea = document.getElementById('html-input')
+  var fileInput = document.getElementById('file-input')
+  var dropZone = document.getElementById('drop-zone')
+  var btnStart = document.getElementById('btn-start')
+  var btnDemo = document.getElementById('btn-demo')
+  var status = document.getElementById('status')
+  var tabs = document.querySelectorAll('.tab')
+  var contents = document.querySelectorAll('.tab-content')
+  var fallbackDemo = '<!DOCTYPE html>\n<html><head><meta charset="UTF-8"><style>body{font-family:sans-serif;padding:40px;max-width:800px;margin:0 auto}h1{color:#333}p{line-height:1.8;color:#555}</style></head><body>\n<h1>示例页面</h1>\n<p>这是一个示例段落，你可以选中它来调整字号、颜色等属性。</p>\n<div style="background:#f0f7ff;padding:20px;border-radius:8px;margin:20px 0">\n<h2 style="color:#4a9eff">蓝色标题</h2>\n<p>试试修改这个区块的背景颜色和圆角。</p>\n</div>\n</body></html>'
+
+  function setStatus(text, type) {
+    status.textContent = text
+    status.className = 'status' + (type ? ' ' + type : '')
+  }
+
+  function activateTab(name) {
+    Array.prototype.forEach.call(tabs, function(t) {
+      var active = t.dataset.tab === name
+      t.classList.toggle('active', active)
+      t.setAttribute('aria-selected', active ? 'true' : 'false')
+    })
+    Array.prototype.forEach.call(contents, function(c) { c.classList.remove('active') })
+    document.getElementById('tab-' + name).classList.add('active')
+  }
+
+  Array.prototype.forEach.call(tabs, function(tab) {
+    tab.addEventListener('click', function() { activateTab(tab.dataset.tab) })
+  })
+
+  function checkReady() {
+    var ready = !!textarea.value.trim()
+    btnStart.disabled = !ready
+    if (ready) setStatus('已检测到 HTML 内容，可以开始编辑。', 'ready')
+    else setStatus('准备好后点击“开始编辑”。')
+  }
+  textarea.addEventListener('input', checkReady)
+
+  dropZone.addEventListener('click', function() { fileInput.click() })
+  dropZone.addEventListener('dragover', function(e) { e.preventDefault(); dropZone.classList.add('dragover') })
+  dropZone.addEventListener('dragleave', function() { dropZone.classList.remove('dragover') })
+  dropZone.addEventListener('drop', function(e) {
+    e.preventDefault()
+    dropZone.classList.remove('dragover')
+    if (e.dataTransfer.files[0]) readFile(e.dataTransfer.files[0])
+  })
+  fileInput.addEventListener('change', function() {
+    if (fileInput.files[0]) readFile(fileInput.files[0])
+  })
+
+  function readFile(file) {
+    if (!/\.(html|htm)$/i.test(file.name)) {
+      setStatus('请选择 .html 或 .htm 文件。', 'error')
+      return
+    }
+    var reader = new FileReader()
+    reader.onload = function(e) {
+      textarea.value = e.target.result
+      activateTab('paste')
+      dropZone.innerHTML = '<p>已加载：' + escapeHTML(file.name) + '</p><small>可切回“上传文件”重新选择</small>'
+      checkReady()
+    }
+    reader.onerror = function() { setStatus('文件读取失败，请重新选择。', 'error') }
+    reader.readAsText(file)
+  }
+
+  function stripEditorArtifacts(html) {
+    var doc = new DOMParser().parseFromString(html, 'text/html')
+    Array.prototype.forEach.call(doc.querySelectorAll('#__ve-root, .__ve-toggle, style[data-ve], script[data-ve], script[src*="editor.js"]'), function(el) {
+      if (el.parentNode) el.parentNode.removeChild(el)
+    })
+    Array.prototype.forEach.call(doc.querySelectorAll('[data-ve-editing]'), function(el) {
+      el.removeAttribute('data-ve-editing')
+      el.removeAttribute('contenteditable')
+    })
+    return '<!DOCTYPE html>\n' + doc.documentElement.outerHTML
+  }
+
+  function escapeHTML(value) {
+    return String(value).replace(/[&<>"']/g, function(ch) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]
+    })
+  }
+
+  function loadDemoHTML(html, message) {
+    textarea.value = html
+    activateTab('paste')
+    checkReady()
+    if (message) setStatus(message, 'ready')
+  }
+
+  btnDemo.addEventListener('click', function() {
+    if (!window.fetch) {
+      loadDemoHTML(fallbackDemo, '当前浏览器不支持 fetch，已载入内置演示页面。')
+      return
+    }
+    fetch('demo.html').then(function(r) {
+      if (!r.ok) throw new Error('demo load failed')
+      return r.text()
+    }).then(function(html) {
+      loadDemoHTML(html, '演示页面已载入，可以开始编辑。')
+    }).catch(function() {
+      loadDemoHTML(fallbackDemo, '无法读取 demo.html，已载入内置演示页面。')
+    })
+  })
+
+  btnStart.addEventListener('click', function() {
+    var html = textarea.value.trim()
+    if (!html) return
+
+    if (!html.match(/<html[\s>]/i)) {
+      html = '<!DOCTYPE html>\n<html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head><body>\n' + html + '\n</body></html>'
+    }
+
+    html = stripEditorArtifacts(html)
+
+    var editorSrc = new URL('editor.js', window.location.href).href
+    var script = '<script src="' + editorSrc + '" data-ve="1"><\/script>'
+
+    if (html.indexOf('</body>') !== -1) {
+      html = html.replace('</body>', script + '</body>')
+    } else if (html.indexOf('</html>') !== -1) {
+      html = html.replace('</html>', script + '</html>')
+    } else {
+      html += script
+    }
+
+    document.open()
+    document.write(html)
+    document.close()
+  })
+})()
+</script>
+</body>
+</html>
