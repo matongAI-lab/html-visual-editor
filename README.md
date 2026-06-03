@@ -1,20 +1,42 @@
 # HTML Visual Editor
 
-A lightweight visual editor for local static HTML files.
+A small browser-based visual editor for static HTML files.
 
-The editor runs fully in the browser. You can upload or paste an HTML file, select elements on the page, adjust styles, edit text, and export a cleaned HTML file without the editor runtime.
+It lets you open an HTML page, click elements directly in the rendered page, adjust common styles, edit text, and export a cleaned HTML file. It is designed for people who receive or generate HTML but do not want to keep editing everything by hand in source code.
 
-## Features
+## What It Does
 
-- Upload `.html` / `.htm` files or paste HTML code.
-- Click elements directly on the rendered page.
-- Edit text content for selected elements.
-- Adjust common visual styles such as typography, spacing, size, color, background, radius, and shadow.
-- Undo and restore recent edits.
-- Export a clean HTML file with editor artifacts removed.
-- Conservative page navigation support for common slide and paginated HTML structures.
+- Upload an `.html` or `.htm` file.
+- Paste HTML code directly into the editor.
+- Enter edit mode automatically after an uploaded or demo HTML file is loaded.
+- Select elements visually from the page.
+- Edit text on selected elements.
+- Adjust typography, spacing, size, color, background, border radius, and shadow.
+- Undo and restore recent changes.
+- Download a clean HTML file with editor-specific code removed.
+- Handle common slide-style or paginated HTML files when the page structure can be detected safely.
+
+## What It Is Good For
+
+This project is useful when you need to make quick visual changes to a static HTML page, such as:
+
+- AI-generated HTML pages.
+- Simple landing pages.
+- Report pages.
+- HTML slide decks.
+- Static prototypes.
+- Internal documents exported as HTML.
+
+It is not a full website builder, CMS, or professional design tool. The goal is to provide a lightweight editing layer for existing HTML.
 
 ## Quick Start
+
+Clone the repository:
+
+```bash
+git clone https://github.com/matongAI-lab/html-visual-editor.git
+cd html-visual-editor
+```
 
 Install development dependencies:
 
@@ -22,19 +44,25 @@ Install development dependencies:
 npm install
 ```
 
-Run the local static server:
+Start the local server:
 
 ```bash
 npm run serve
 ```
 
-Open:
+Open this URL in your browser:
 
 ```text
 http://127.0.0.1:4173/index.html
 ```
 
-## Direct Script Usage
+## No Build Required
+
+The editor itself is plain HTML, CSS, and JavaScript. There is no frontend build step required to use it.
+
+The `npm install` step is only needed for the local server and automated browser tests.
+
+## Using It In Another HTML File
 
 You can also add the editor script to an existing HTML file:
 
@@ -42,51 +70,78 @@ You can also add the editor script to an existing HTML file:
 <script src="editor.js"></script>
 ```
 
-Then open the HTML file in a browser and click the floating edit button.
+Then open the HTML file in a browser and use the floating edit button.
+
+## Export Behavior
+
+When you download or copy the edited HTML, the editor removes its own runtime artifacts, temporary attributes, selection markers, and `contenteditable` state.
+
+The exported file should be a normal static HTML file, not a file that depends on this editor.
+
+## Page Navigation
+
+The editor only shows its own page controls when it can detect a reliable multi-page structure.
+
+Supported cases include:
+
+- Explicit slide or page elements.
+- Repeated page blocks.
+- Scroll-based pages.
+- Stacked slide decks using active/previous classes.
+- Runtime-rendered pages with visible counters such as `1 / 12`.
+
+If the editor cannot confidently detect pages, it hides its own page controls and lets the original page controls continue to work.
+
+This conservative behavior is intentional. It avoids showing broken page buttons for HTML files whose pagination is controlled by custom scripts.
+
+## Browser Support
+
+The compatibility test suite covers:
+
+- Desktop Chromium.
+- Desktop WebKit / Safari profile.
+- Mobile Chrome profile.
+- Mobile Safari profile.
+
+Firefox can also be tested separately, but local Firefox headless behavior may depend on the host machine and graphics environment.
 
 ## Testing
 
-Syntax and inline script checks:
+Run syntax and inline-script checks:
 
 ```bash
 npm run check
 ```
 
-Cross-browser compatibility tests:
+Run the main compatibility suite:
 
 ```bash
 npm run test:compat
 ```
 
-The compatibility suite covers Chromium, WebKit, mobile Chrome, and mobile Safari profiles. Firefox can be run separately:
+Run Firefox separately:
 
 ```bash
 npm run test:compat:firefox
 ```
 
-## Page Navigation Behavior
+## Project Structure
 
-The editor only shows its own pager when it can identify a reliable multi-page structure.
+```text
+index.html              Main editor entry page
+editor.js               Editor runtime
+demo.html               Demo HTML file
+scripts/serve.js        Local static server
+tests/compat.spec.js    Cross-browser compatibility tests
+```
 
-Supported cases include:
+## Limitations
 
-- Explicit slide/page elements.
-- Stacked slide decks using active/previous classes.
-- Repeated page blocks.
-- Scroll-based pages.
-- Runtime-rendered pages with visible counters such as `1 / 12`.
-
-If the editor cannot confidently identify pages, it hides its pager and lets the original page controls continue to work.
-
-## Browser Support
-
-The project is tested against:
-
-- Desktop Chromium
-- Desktop WebKit/Safari profile
-- Mobile Chrome profile
-- Mobile Safari profile
+- The editor works best with static HTML.
+- Complex pages with heavy custom JavaScript may not expose reliable page structure.
+- It does not try to rewrite application logic.
+- It does not replace a professional design system or layout engine.
 
 ## License
 
-Choose and add a license before publishing this repository as open source.
+No license has been selected yet. Add a license before treating this project as reusable open-source software.

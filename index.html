@@ -109,11 +109,11 @@
       <input type="file" class="file-input" id="file-input" accept=".html,.htm,text/html">
     </div>
 
-    <div class="status" id="status">准备好后点击“开始编辑”。</div>
+    <div class="status" id="status">上传 HTML 后会自动进入编辑模式；粘贴代码后可编辑当前代码。</div>
 
     <div class="actions">
       <button class="btn btn-secondary" id="btn-demo" type="button">加载演示页面</button>
-      <button class="btn btn-primary" id="btn-start" type="button" disabled>开始编辑</button>
+      <button class="btn btn-primary" id="btn-start" type="button" disabled>编辑当前代码</button>
     </div>
 
     <div class="features">
@@ -161,8 +161,8 @@
   function checkReady() {
     var ready = !!textarea.value.trim()
     btnStart.disabled = !ready
-    if (ready) setStatus('已检测到 HTML 内容，可以开始编辑。', 'ready')
-    else setStatus('准备好后点击“开始编辑”。')
+    if (ready) setStatus('已检测到 HTML 内容，可以编辑当前代码。', 'ready')
+    else setStatus('上传 HTML 后会自动进入编辑模式；粘贴代码后可编辑当前代码。')
   }
   textarea.addEventListener('input', checkReady)
 
@@ -189,6 +189,7 @@
       activateTab('paste')
       dropZone.innerHTML = '<p>已加载：' + escapeHTML(file.name) + '</p><small>可切回“上传文件”重新选择</small>'
       checkReady()
+      startEditing()
     }
     reader.onerror = function() { setStatus('文件读取失败，请重新选择。', 'error') }
     reader.readAsText(file)
@@ -219,11 +220,16 @@
     })
   }
 
+  function editorBootstrapScript(src) {
+    return '<script data-ve="1">(function(){try{sessionStorage.setItem("__ve-auto-edit","1")}catch(e){}var s=document.createElement("script");s.src=' + JSON.stringify(src) + ';s.setAttribute("data-ve","1");document.head.appendChild(s)})();<\/script>'
+  }
+
   function loadDemoHTML(html, message) {
     textarea.value = html
     activateTab('paste')
     checkReady()
     if (message) setStatus(message, 'ready')
+    startEditing()
   }
 
   btnDemo.addEventListener('click', function() {
@@ -235,13 +241,13 @@
       if (!r.ok) throw new Error('demo load failed')
       return r.text()
     }).then(function(html) {
-      loadDemoHTML(html, '演示页面已载入，可以开始编辑。')
+      loadDemoHTML(html, '演示页面已载入，正在进入编辑模式。')
     }).catch(function() {
       loadDemoHTML(fallbackDemo, '无法读取 demo.html，已载入内置演示页面。')
     })
   })
 
-  btnStart.addEventListener('click', function() {
+  function startEditing() {
     var html = textarea.value.trim()
     if (!html) return
 
@@ -252,7 +258,7 @@
     html = stripEditorArtifacts(html)
 
     var editorSrc = new URL('editor.js', window.location.href).href
-    var script = '<script src="' + editorSrc + '" data-ve="1"><\/script>'
+    var script = editorBootstrapScript(editorSrc)
 
     if (html.indexOf('</body>') !== -1) {
       html = html.replace('</body>', script + '</body>')
@@ -262,10 +268,37 @@
       html += script
     }
 
+    try {
+      sessionStorage.setItem('__ve-auto-edit', '1')
+    } catch (e) {}
+
     document.open()
     document.write(html)
     document.close()
-  })
+
+    function ensureEditorMounted(tries) {
+      if (document.querySelector('.__ve-toolbar.visible')) return
+      var toggle = document.querySelector('.__ve-toggle')
+      if (document.getElementById('__ve-root')) {
+        if (toggle && !toggle.classList.contains('active')) toggle.click()
+        return
+      }
+      try {
+        sessionStorage.setItem('__ve-auto-edit', '1')
+      } catch (e) {}
+      if (!document.querySelector('script[data-ve][src], script[src*="editor.js"]')) {
+        var fallbackScript = document.createElement('script')
+        fallbackScript.src = editorSrc
+        fallbackScript.setAttribute('data-ve', '1')
+        ;(document.body || document.documentElement).appendChild(fallbackScript)
+      }
+      if (tries > 0) setTimeout(function() { ensureEditorMounted(tries - 1) }, 250)
+    }
+
+    setTimeout(function() { ensureEditorMounted(4) }, 250)
+  }
+
+  btnStart.addEventListener('click', startEditing)
 })()
 </script>
 </body>

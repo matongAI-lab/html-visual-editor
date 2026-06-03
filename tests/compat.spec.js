@@ -17,23 +17,19 @@ test.afterAll(async () => {
   await new Promise(resolve => server.close(resolve))
 })
 
-test('loads demo and enters visual editing mode', async ({ page }) => {
+test('loads demo and automatically enters visual editing mode', async ({ page }) => {
   await page.goto(`${baseURL}/index.html`)
 
   await expect(page.locator('h1')).toContainText('HTML 可视化编辑器')
   await expect(page.getByRole('tab', { name: '上传文件' })).toHaveAttribute('aria-selected', 'true')
   await expect(page.locator('#btn-start')).toBeDisabled()
+  await expect(page.locator('#status')).toContainText('上传 HTML 后会自动进入编辑模式')
 
   await page.locator('#btn-demo').click()
-  await expect(page.locator('#btn-start')).toBeEnabled()
-
-  await page.locator('#btn-start').scrollIntoViewIfNeeded()
-  await page.locator('#btn-start').click()
-  await expect(page.locator('.__ve-toggle')).toBeVisible({ timeout: 10000 })
+  await expect(page.locator('.__ve-toolbar.visible')).toBeVisible({ timeout: 10000 })
+  await expect(page.locator('.__ve-toggle')).toHaveClass(/active/)
   await expect(page.locator('h1')).toContainText('HTML 可视化编辑器')
 
-  await page.locator('.__ve-toggle').click()
-  await expect(page.locator('.__ve-toolbar.visible')).toBeVisible()
   await expect(page.locator('.__ve-panel.visible')).toHaveCount(0)
   await expect(page.locator('.__ve-toolbar')).toContainText('版式')
   await expect(page.locator('.__ve-toolbar')).toContainText('复制 HTML')
@@ -66,7 +62,6 @@ test('next page scrolls vertical pages', async ({ page }) => {
 </html>`)
 
   await page.locator('#btn-start').click()
-  await page.locator('.__ve-toggle').click()
   await expect(page.locator('.__ve-page-label')).toContainText('/')
 
   const before = await page.evaluate(() => window.pageYOffset)
@@ -95,7 +90,6 @@ test('hides pager when no reliable multi-page structure exists', async ({ page }
 </html>`)
 
   await page.locator('#btn-start').click()
-  await page.locator('.__ve-toggle').click()
   await expect(page.locator('.__ve-pager')).toHaveClass(/hidden/)
 })
 
@@ -117,7 +111,7 @@ test('downloads a clean html export', async ({ page }) => {
 </html>`)
 
   await page.locator('#btn-start').click()
-  await page.locator('.__ve-toggle').click()
+  await expect(page.locator('.__ve-toolbar.visible')).toBeVisible()
   await page.locator('h1').click({ position: { x: 8, y: 8 } })
   await page.getByText('编辑文字').click()
 
@@ -206,7 +200,6 @@ test('next page scrolls an inner page container', async ({ page }) => {
 </html>`)
 
   await page.locator('#btn-start').click()
-  await page.locator('.__ve-toggle').click()
   await expect(page.locator('.__ve-page-label')).toContainText('/')
 
   const before = await page.locator('.deck').evaluate(el => el.scrollTop)
@@ -239,7 +232,6 @@ test('uses explicit slide count instead of viewport-estimated pages', async ({ p
 </html>`)
 
   await page.locator('#btn-start').click()
-  await page.locator('.__ve-toggle').click()
   await expect(page.locator('.__ve-page-label')).toContainText('1/16')
 })
 
@@ -263,7 +255,6 @@ test('infers anonymous repeated page blocks', async ({ page }) => {
 </html>`)
 
   await page.locator('#btn-start').click()
-  await page.locator('.__ve-toggle').click()
   await expect(page.locator('.__ve-page-label')).toContainText('1/16')
 })
 
@@ -300,7 +291,6 @@ test('supports stacked slide decks with data indexes', async ({ page }) => {
 </html>`)
 
   await page.locator('#btn-start').click()
-  await page.locator('.__ve-toggle').click()
   await expect(page.locator('.__ve-page-label')).toContainText('1/16')
 
   const box = await page.getByText('下一页').boundingBox()
@@ -357,7 +347,6 @@ test('reads runtime generated page counters', async ({ page }) => {
 </html>`)
 
   await page.locator('#btn-start').click()
-  await page.locator('.__ve-toggle').click()
   await expect(page.locator('.__ve-page-label')).toContainText('1/12')
 
   const box = await page.getByText('下一页').boundingBox()

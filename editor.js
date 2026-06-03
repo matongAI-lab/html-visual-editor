@@ -1539,7 +1539,7 @@
       sessionStorage.removeItem(PREFIX + '-future')
       if (sessionStorage.getItem(PREFIX + '-auto-edit') === '1') {
         sessionStorage.removeItem(PREFIX + '-auto-edit')
-        setTimeout(enterEdit, 0)
+        setTimeout(enterEdit, 80)
       }
     } catch (e) {}
     updateToolbarState()
