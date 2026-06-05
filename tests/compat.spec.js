@@ -26,6 +26,14 @@ async function ensureEditMode(page) {
   }
 }
 
+function readPngSize(filePath) {
+  const buffer = fs.readFileSync(filePath)
+  return {
+    width: buffer.readUInt32BE(16),
+    height: buffer.readUInt32BE(20)
+  }
+}
+
 test('loads demo and automatically enters visual editing mode', async ({ page }) => {
   await page.goto(`${baseURL}/index.html`)
 
@@ -384,6 +392,40 @@ test('exports current page and all pages as png downloads', async ({ page }) => 
   await page.locator('[data-ve-action="export-all-png"]').click()
   await expect.poll(() => downloads.length, { timeout: 30000 }).toBe(2)
   expect(downloads.map(download => download.suggestedFilename())).toEqual(['page-01.png', 'page-02.png'])
+})
+
+test('exports a single long html document as a full-height png', async ({ page }) => {
+  await page.goto(`${baseURL}/index.html`)
+  await page.getByRole('tab', { name: '粘贴代码' }).click()
+  await page.locator('#html-input').fill(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { margin: 0; font-family: sans-serif; background: white; }
+    .hero, .body, .ending { min-height: 720px; display: grid; place-items: center; font-size: 42px; }
+    .hero { background: #eff6ff; }
+    .body { background: #f8fafc; }
+    .ending { background: #ecfdf5; }
+  </style>
+</head>
+<body>
+  <div class="hero">Top content</div>
+  <div class="body">Middle content</div>
+  <div class="ending">Bottom content</div>
+</body>
+</html>`)
+
+  await page.locator('#btn-start').click()
+  await ensureEditMode(page)
+
+  const viewportHeight = await page.evaluate(() => window.innerHeight)
+  const downloadPromise = page.waitForEvent('download')
+  await page.locator('[data-ve-action="export-png"]').click()
+  const download = await downloadPromise
+  expect(await download.failure()).toBeNull()
+  const size = readPngSize(await download.path())
+  expect(size.height).toBeGreaterThan(viewportHeight * 2)
 })
 
 test('next page scrolls an inner page container', async ({ page }) => {

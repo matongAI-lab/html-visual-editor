@@ -14,7 +14,7 @@ It lets you open an AI-generated HTML page, click elements directly in the rende
 - Adjust typography, spacing, size, color, background, border radius, and shadow.
 - Undo and restore recent changes.
 - Download a clean HTML file with editor-specific code removed.
-- Export the current page or all detected pages as PNG files.
+- Export a full single-page document, the current detected page, or all detected pages as PNG files.
 - Handle common slide-style or paginated HTML files when the page structure can be detected safely.
 
 ## What It Is Good For
@@ -86,7 +86,7 @@ When you download or copy the edited HTML, the editor removes its own runtime ar
 
 The exported file should be a normal static HTML file, not a file that depends on this editor.
 
-PNG export uses the bundled local `html2canvas` runtime. It works best for static pages with local or CORS-enabled images. Browser security rules may block PNG export for cross-origin images that do not allow canvas rendering.
+PNG export uses the bundled local `html2canvas` runtime. When no reliable pagination is detected, PNG export captures the full HTML document rather than only the visible viewport. When pages are detected, it captures the current page or each detected page. It works best for static pages with local or CORS-enabled images. Browser security rules may block PNG export for cross-origin images that do not allow canvas rendering.
 
 ## Page Navigation
 

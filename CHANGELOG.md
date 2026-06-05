@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1 — 2026-06-06
+
+### Changed
+
+- **PNG export behavior**: single long HTML documents now export as full-height PNG images instead of only capturing the visible viewport. Detected paginated pages still export by current page or by batch.
+
 ## 0.3.0 — 2026-06-05
 
 ### Product Positioning

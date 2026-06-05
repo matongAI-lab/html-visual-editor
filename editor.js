@@ -1947,7 +1947,7 @@
   }
 
   function exportCurrentPNG() {
-    captureViewportPNG('page-' + Date.now() + '.png').then(function () {
+    captureDocumentPNG('page-' + Date.now() + '.png').then(function () {
       showToast(t('当前页 PNG 已导出'))
     }, function () {
       showToast(t('PNG 导出失败：请确认页面图片未被跨域限制'))
@@ -1967,7 +1967,7 @@
       for (var i = 0; i < total; i++) {
         goToPageIndex(i)
         await wait(450)
-        await captureViewportPNG('page-' + padNumber(i + 1, 2) + '.png')
+        await capturePagePNG('page-' + padNumber(i + 1, 2) + '.png', state.pages[i])
         await wait(120)
       }
       showToast(t('全部 PNG 已导出'))
@@ -1977,26 +1977,64 @@
     goToPageIndex(original)
   }
 
+  function capturePagePNG(filename, page) {
+    if (page && page.node) return captureElementPNG(page.node, filename)
+    if (page) return captureViewportPNG(filename)
+    return captureDocumentPNG(filename)
+  }
+
+  function captureDocumentPNG(filename) {
+    var width = Math.max(document.documentElement.scrollWidth, document.body ? document.body.scrollWidth : 0, window.innerWidth)
+    var height = Math.max(document.documentElement.scrollHeight, document.body ? document.body.scrollHeight : 0, window.innerHeight)
+    return captureCanvasPNG(document.documentElement, filename, {
+      width: width,
+      height: height,
+      windowWidth: width,
+      windowHeight: height,
+      scrollX: 0,
+      scrollY: 0,
+      x: 0,
+      y: 0
+    })
+  }
+
+  function captureElementPNG(node, filename) {
+    var rect = node.getBoundingClientRect()
+    return captureCanvasPNG(node, filename, {
+      width: Math.ceil(rect.width || node.scrollWidth || window.innerWidth),
+      height: Math.ceil(rect.height || node.scrollHeight || window.innerHeight),
+      windowWidth: Math.max(document.documentElement.scrollWidth, window.innerWidth),
+      windowHeight: Math.max(document.documentElement.scrollHeight, window.innerHeight),
+      scrollX: 0,
+      scrollY: 0
+    })
+  }
+
   function captureViewportPNG(filename) {
+    return captureCanvasPNG(document.body || document.documentElement, filename, {
+      x: window.pageXOffset || document.documentElement.scrollLeft || 0,
+      y: window.pageYOffset || document.documentElement.scrollTop || 0,
+      width: window.innerWidth,
+      height: window.innerHeight,
+      windowWidth: window.innerWidth,
+      windowHeight: window.innerHeight,
+      scrollX: -(window.pageXOffset || document.documentElement.scrollLeft || 0),
+      scrollY: -(window.pageYOffset || document.documentElement.scrollTop || 0)
+    })
+  }
+
+  function captureCanvasPNG(target, filename, options) {
     finishTextEdit()
     hideOv(dom.hoverOv)
     hideOv(dom.selOv)
     return loadHtml2Canvas().then(function () {
       var hidden = hideEditorForCapture()
-      return window.html2canvas(document.body, {
+      return window.html2canvas(target, Object.assign({
         backgroundColor: '#ffffff',
         useCORS: true,
         allowTaint: false,
-        logging: false,
-        x: window.pageXOffset || document.documentElement.scrollLeft || 0,
-        y: window.pageYOffset || document.documentElement.scrollTop || 0,
-        width: window.innerWidth,
-        height: window.innerHeight,
-        windowWidth: window.innerWidth,
-        windowHeight: window.innerHeight,
-        scrollX: -(window.pageXOffset || document.documentElement.scrollLeft || 0),
-        scrollY: -(window.pageYOffset || document.documentElement.scrollTop || 0)
-      }).then(function (canvas) {
+        logging: false
+      }, options || {})).then(function (canvas) {
         restoreEditorAfterCapture(hidden)
         return new Promise(function (resolve, reject) {
           canvas.toBlob(function (blob) {
