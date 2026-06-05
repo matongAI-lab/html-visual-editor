@@ -58,7 +58,7 @@
     '灰度': 'Grayscale', '背景模糊': 'Backdrop Blur',
     '旋转': 'Rotate', '缩放': 'Scale', '水平位移': 'Move X', '垂直位移': 'Move Y',
     '链接': 'Link', '跳转地址': 'URL', '打开方式': 'Target',
-    '导出 PNG': 'PNG', '全部 PNG': 'All PNG',
+    '导出整页 PNG': 'Full PNG', '按页导出 PNG': 'Page PNGs',
     '页面结构': 'Structure', '区块 / 链接 / 按钮 / 图片': 'Blocks / Links / Buttons / Images',
     '当前区块：': 'Block: ', '当前区块：未识别': 'Block: None',
     '选中区块': 'Select', '复制区块': 'Copy', '上移区块': 'Move Up', '下移区块': 'Move Down', '删除区块': 'Delete',
@@ -68,7 +68,7 @@
     '进入编辑模式后，点击页面里的标题、段落、卡片或按钮开始调整。': 'Enter edit mode, then click any element to start.',
     '版式': 'Styles', '编辑文字': 'Edit Text', '撤销': 'Undo', '复原': 'Redo',
     '上一页': 'Prev', '下一页': 'Next', '重新载入': 'Reload',
-    '复制 HTML': 'Copy HTML', '保存到本地': 'Save',
+    '复制 HTML': 'Copy HTML', '保存 HTML': 'Save HTML',
     '切换编辑模式 (Alt+E)': 'Toggle edit mode (Alt+E)',
     '退出编辑模式 (Alt+E)': 'Exit edit mode (Alt+E)',
     '退出编辑': 'Exit', '显示/隐藏样式面板': 'Toggle style panel',
@@ -80,7 +80,7 @@
     '没有可撤销的操作': 'Nothing to undo', '没有可复原的操作': 'Nothing to redo',
     '已复制到剪贴板': 'Copied to clipboard',
     '复制失败，请手动选择导出的 HTML': 'Copy failed',
-    '已保存到本地': 'Saved',
+    'HTML 已保存': 'HTML saved',
     '当前浏览器不支持直接保存，请先复制 HTML': 'Download not supported, please copy HTML',
     '这个元素不适合直接编辑文字': 'This element cannot be text-edited',
     '正在编辑文字 · 完成后点页面空白处或按 Esc': 'Editing text · Click outside or press Esc when done',
@@ -90,7 +90,7 @@
     '区块已上移': 'Block moved up', '区块已下移': 'Block moved down',
     '删除当前区块？可用撤销恢复。': 'Delete this block? Undo can restore it.',
     '区块已删除': 'Block deleted',
-    'PNG 已导出': 'PNG exported', '当前页 PNG 已导出': 'Current PNG exported',
+    'PNG 已导出': 'PNG exported', '整页 PNG 已导出': 'Full PNG exported',
     'PNG 导出失败：请确认页面图片未被跨域限制': 'PNG export failed. Check cross-origin images.',
     '开始导出 ': 'Exporting ', ' 页 PNG': ' PNG pages', '全部 PNG 已导出': 'All PNG exported',
     '文字编辑已开启': 'Text edit mode on', '文字编辑已关闭': 'Text edit mode off',
@@ -575,11 +575,11 @@
     dom.breadcrumb = el('span', PREFIX + '-breadcrumb')
     var copyBtn = el('button', PREFIX + '-tb-btn', { text: t('复制 HTML'), 'data-ve-action': 'copy-html' })
     copyBtn.addEventListener('click', copyHTML)
-    var dlBtn = el('button', PREFIX + '-tb-btn primary', { text: t('保存到本地'), 'data-ve-action': 'download-html' })
+    var dlBtn = el('button', PREFIX + '-tb-btn primary', { text: t('保存 HTML'), title: t('保存 HTML'), 'data-ve-action': 'download-html' })
     dlBtn.addEventListener('click', downloadHTML)
-    var pngBtn = el('button', PREFIX + '-tb-btn', { text: t('导出 PNG'), title: t('导出 PNG'), 'data-ve-action': 'export-png' })
+    var pngBtn = el('button', PREFIX + '-tb-btn', { text: t('导出整页 PNG'), title: t('导出整页 PNG'), 'data-ve-action': 'export-png' })
     pngBtn.addEventListener('click', exportCurrentPNG)
-    var allPngBtn = el('button', PREFIX + '-tb-btn', { text: t('全部 PNG'), title: t('全部 PNG'), 'data-ve-action': 'export-all-png' })
+    var allPngBtn = el('button', PREFIX + '-tb-btn', { text: t('按页导出 PNG'), title: t('按页导出 PNG'), 'data-ve-action': 'export-all-png' })
     allPngBtn.addEventListener('click', exportAllPNGs)
     dom.layoutBtn = el('button', PREFIX + '-tb-btn', { text: t('版式'), title: t('显示/隐藏样式面板'), 'data-ve-action': 'toggle-layout' })
     dom.layoutBtn.addEventListener('click', toggleLayoutPanel)
@@ -1911,13 +1911,13 @@
     finishTextEdit()
     var html = exportHTML()
     var blob = new Blob([html], { type: 'text/html;charset=utf-8' })
-    downloadBlob(blob, 'page-' + Date.now() + '.html', t('已保存到本地'))
+    downloadBlob(blob, 'page-' + Date.now() + '.html', t('HTML 已保存'))
   }
 
   function downloadBlob(blob, filename, successText) {
     if (navigator.msSaveOrOpenBlob) {
       navigator.msSaveOrOpenBlob(blob, filename)
-      showToast(successText || t('已保存到本地'))
+      showToast(successText || t('HTML 已保存'))
       return
     }
     if (!window.URL || !URL.createObjectURL) {
@@ -1943,12 +1943,12 @@
       removeNode(a)
       URL.revokeObjectURL(url)
     }, 1000)
-    showToast(successText || t('已保存到本地'))
+    showToast(successText || t('HTML 已保存'))
   }
 
   function exportCurrentPNG() {
     captureDocumentPNG('page-' + Date.now() + '.png').then(function () {
-      showToast(t('当前页 PNG 已导出'))
+      showToast(t('整页 PNG 已导出'))
     }, function () {
       showToast(t('PNG 导出失败：请确认页面图片未被跨域限制'))
     })

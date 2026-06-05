@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.2 — 2026-06-06
+
+### Changed
+
+- Renamed export toolbar actions for clarity: **保存 HTML**, **导出整页 PNG**, and **按页导出 PNG**.
+- Clarified PNG behavior in docs: the single PNG action exports the full HTML document, while the batch PNG action exports detected pages.
+
 ## 0.3.1 — 2026-06-06
 
 ### Changed
