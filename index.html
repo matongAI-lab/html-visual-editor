@@ -303,7 +303,9 @@
 
     html = stripEditorArtifacts(html)
 
-    var editorSrc = new URL('editor.js', window.location.href).href
+    var editorURL = new URL('editor.js', window.location.href)
+    editorURL.searchParams.set('v', Date.now())
+    var editorSrc = editorURL.href
     var script = editorBootstrapScript(editorSrc)
 
     if (html.indexOf('</body>') !== -1) {
