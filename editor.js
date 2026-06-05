@@ -6,7 +6,7 @@
   var EASE = 'cubic-bezier(.4,0,.2,1)'
   var EASE_OUT = 'cubic-bezier(0,.7,.3,1)'
 
-  var state = { active: false, selected: null, hovered: null, textEditing: null, history: [], future: [], pages: [], pageMode: 'scroll', currentPage: 0, restoring: false, layoutOpen: false }
+  var state = { active: false, selected: null, hovered: null, textEditing: null, textFlow: false, history: [], future: [], pages: [], pageMode: 'scroll', currentPage: 0, restoring: false, layoutOpen: false }
   var dom = {}
 
   function each(list, fn) { Array.prototype.forEach.call(list, fn) }
@@ -19,6 +19,70 @@
 
   var ICON_EDIT = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>'
   var ICON_X = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
+
+  // ========== i18n ==========
+  var LANG = /^zh\b/i.test((typeof navigator !== 'undefined' ? navigator.language : 'en') || 'en') ? 'zh' : 'en'
+  var EN = {
+    '文字': 'Text', '背景': 'Background', '间距': 'Spacing', '尺寸': 'Size',
+    '定位': 'Position', '边框': 'Border', '排版': 'Typography', '布局': 'Layout',
+    '阴影': 'Shadow', '效果': 'Effects', '变换': 'Transform',
+    '字号': 'Font Size', '行高': 'Line Height', '字间距': 'Letter Spacing',
+    '字重': 'Weight', '对齐': 'Align', '文字颜色': 'Color',
+    '100 极细': '100 Thin', '300 细体': '300 Light', '400 常规': '400 Regular',
+    '500 中等': '500 Medium', '600 半粗': '600 Semi Bold', '700 粗体': '700 Bold',
+    '900 极粗': '900 Black',
+    '左': 'Left', '中': 'Center', '右': 'Right', '两端': 'Justify',
+    '背景颜色': 'Background', '不透明度': 'Opacity',
+    '内边距': 'Padding', '外边距': 'Margin',
+    '宽度': 'Width', '高度': 'Height', '最大宽度': 'Max Width', '最小高度': 'Min Height',
+    '圆角': 'Radius',
+    '定位方式': 'Mode', '上偏移': 'Top', '右偏移': 'Right', '下偏移': 'Bottom',
+    '左偏移': 'Left', '层级': 'Z-Index',
+    'static 默认': 'static', 'relative 相对': 'relative', 'absolute 绝对': 'absolute',
+    'fixed 固定': 'fixed', 'sticky 粘性': 'sticky',
+    '粗细': 'Width', '样式': 'Style', '颜色': 'Color',
+    'none 无': 'none', 'solid 实线': 'solid', 'dashed 虚线': 'dashed',
+    'dotted 点线': 'dotted', 'double 双线': 'double',
+    '字体': 'Font Family', '斜体': 'Italic', '装饰': 'Decoration',
+    '首行缩进': 'Indent', '换行方式': 'Wrapping', '词间距': 'Word Spacing',
+    '正常': 'Normal', '无': 'None', '下划线': 'Underline', '删除线': 'Strikethrough',
+    'normal 自动': 'normal', 'nowrap 不换': 'nowrap',
+    'pre-wrap 保留换行': 'pre-wrap', 'pre-line 合并空白': 'pre-line',
+    '显示': 'Display', 'Flex 方向': 'Direction', '主轴对齐': 'Justify',
+    '交叉轴对齐': 'Align Items', 'Flex 换行': 'Wrap', '子项间距': 'Gap', '溢出': 'Overflow',
+    'none 隐藏': 'none', '横': 'Row', '竖': 'Col', '横反': 'Row ↩', '竖反': 'Col ↩',
+    '不换': 'No', '换行': 'Wrap',
+    'visible 显示': 'visible', 'hidden 隐藏': 'hidden', 'scroll 滚动': 'scroll', 'auto 自动': 'auto',
+    '盒阴影': 'Box Shadow', '文字阴影': 'Text Shadow', '糊': 'Bl', '展': 'Sp',
+    '模糊': 'Blur', '亮度': 'Brightness', '对比度': 'Contrast', '饱和度': 'Saturation',
+    '灰度': 'Grayscale', '背景模糊': 'Backdrop Blur',
+    '旋转': 'Rotate', '缩放': 'Scale', '水平位移': 'Move X', '垂直位移': 'Move Y',
+    '链接': 'Link', '跳转地址': 'URL', '打开方式': 'Target',
+    '样式面板': 'Style Panel', '未选择': 'None',
+    '进入编辑模式后，点击页面里的标题、段落、卡片或按钮开始调整。': 'Enter edit mode, then click any element to start.',
+    '版式': 'Styles', '编辑文字': 'Edit Text', '撤销': 'Undo', '复原': 'Redo',
+    '上一页': 'Prev', '下一页': 'Next', '重新载入': 'Reload',
+    '复制 HTML': 'Copy HTML', '保存到本地': 'Save',
+    '切换编辑模式 (Alt+E)': 'Toggle edit mode (Alt+E)',
+    '退出编辑模式 (Alt+E)': 'Exit edit mode (Alt+E)',
+    '退出编辑': 'Exit', '显示/隐藏样式面板': 'Toggle style panel',
+    '点击页面文字直接编辑 (Alt+T)': 'Click text to edit (Alt+T)',
+    '撤销上一步 (Alt+Z)': 'Undo (Alt+Z)', '复原刚刚撤销的操作 (Alt+Y)': 'Redo (Alt+Y)',
+    '切换到上一页 (Alt+←)': 'Previous page (Alt+←)', '切换到下一页 (Alt+→)': 'Next page (Alt+→)',
+    '重新载入当前文件/入口页': 'Reload current file',
+    '点击选中元素 · 按住 Ctrl 点击可触发页面原有功能': 'Click to select · Ctrl+click for page behavior',
+    '没有可撤销的操作': 'Nothing to undo', '没有可复原的操作': 'Nothing to redo',
+    '已复制到剪贴板': 'Copied to clipboard',
+    '复制失败，请手动选择导出的 HTML': 'Copy failed',
+    '已保存到本地': 'Saved',
+    '当前浏览器不支持直接保存，请先复制 HTML': 'Download not supported, please copy HTML',
+    '这个元素不适合直接编辑文字': 'This element cannot be text-edited',
+    '正在编辑文字 · 完成后点页面空白处或按 Esc': 'Editing text · Click outside or press Esc when done',
+    '文字已更新': 'Text updated',
+    '文字编辑已开启': 'Text edit mode on', '文字编辑已关闭': 'Text edit mode off',
+    '重新载入会放弃未复制/保存的修改，确定继续吗？': 'Reload will discard unsaved changes. Continue?'
+  }
+  function t(s) { return LANG === 'zh' ? s : (EN[s] || s) }
 
   // ========== Compound Property Helpers ==========
 
@@ -55,166 +119,166 @@
 
   var GROUPS = [
     {
-      group: '文字', collapsed: false,
+      group: t('文字'), collapsed: false,
       controls: [
-        { prop: 'fontSize', label: '字号', type: 'slider', min: 12, max: 96, step: 1, unit: 'px',
+        { prop: 'fontSize', label: t('字号'), type: 'slider', min: 12, max: 96, step: 1, unit: 'px',
           parse: function (v) { return parseFloat(v) } },
-        { prop: 'lineHeight', label: '行高', type: 'slider', min: 0.8, max: 3.0, step: 0.05, unit: '',
+        { prop: 'lineHeight', label: t('行高'), type: 'slider', min: 0.8, max: 3.0, step: 0.05, unit: '',
           parse: function (v, el) { if (v === 'normal') return 1.4; return Math.round(parseFloat(v) / parseFloat(getComputedStyle(el).fontSize) * 100) / 100 },
           format: function (v) { return String(v) } },
-        { prop: 'letterSpacing', label: '字间距', type: 'slider', min: -2, max: 10, step: 0.5, unit: 'px',
+        { prop: 'letterSpacing', label: t('字间距'), type: 'slider', min: -2, max: 10, step: 0.5, unit: 'px',
           parse: function (v) { return v === 'normal' ? 0 : parseFloat(v) } },
-        { prop: 'fontWeight', label: '字重', type: 'select',
+        { prop: 'fontWeight', label: t('字重'), type: 'select',
           options: [
-            { value: '100', label: '100 极细' }, { value: '300', label: '300 细体' },
-            { value: '400', label: '400 常规' }, { value: '500', label: '500 中等' },
-            { value: '600', label: '600 半粗' }, { value: '700', label: '700 粗体' },
-            { value: '900', label: '900 极粗' }
+            { value: '100', label: t('100 极细') }, { value: '300', label: t('300 细体') },
+            { value: '400', label: t('400 常规') }, { value: '500', label: t('500 中等') },
+            { value: '600', label: t('600 半粗') }, { value: '700', label: t('700 粗体') },
+            { value: '900', label: t('900 极粗') }
           ],
           parse: function (v) { return String(Math.round(parseFloat(v))) } },
-        { prop: 'textAlign', label: '对齐', type: 'buttonGroup',
-          options: [{ value: 'left', label: '左' }, { value: 'center', label: '中' }, { value: 'right', label: '右' }, { value: 'justify', label: '两端' }] },
-        { prop: 'color', label: '文字颜色', type: 'color' }
+        { prop: 'textAlign', label: t('对齐'), type: 'buttonGroup',
+          options: [{ value: 'left', label: t('左') }, { value: 'center', label: t('中') }, { value: 'right', label: t('右') }, { value: 'justify', label: t('两端') }] },
+        { prop: 'color', label: t('文字颜色'), type: 'color' }
       ]
     },
     {
-      group: '背景', collapsed: false,
+      group: t('背景'), collapsed: false,
       controls: [
-        { prop: 'backgroundColor', label: '背景颜色', type: 'color' },
-        { prop: 'opacity', label: '不透明度', type: 'slider', min: 0, max: 1, step: 0.05, unit: '',
+        { prop: 'backgroundColor', label: t('背景颜色'), type: 'color' },
+        { prop: 'opacity', label: t('不透明度'), type: 'slider', min: 0, max: 1, step: 0.05, unit: '',
           parse: function (v) { return parseFloat(v) },
           format: function (v) { return String(v) } }
       ]
     },
     {
-      group: '间距', collapsed: false,
+      group: t('间距'), collapsed: false,
       controls: [
-        { prop: 'padding', label: '内边距', type: 'spacing' },
-        { prop: 'margin', label: '外边距', type: 'spacing' }
+        { prop: 'padding', label: t('内边距'), type: 'spacing' },
+        { prop: 'margin', label: t('外边距'), type: 'spacing' }
       ]
     },
     {
-      group: '尺寸', collapsed: false,
+      group: t('尺寸'), collapsed: false,
       controls: [
-        { prop: 'width', label: '宽度', type: 'dimension' },
-        { prop: 'height', label: '高度', type: 'dimension' },
-        { prop: 'maxWidth', label: '最大宽度', type: 'dimension' },
-        { prop: 'minHeight', label: '最小高度', type: 'dimension' },
-        { prop: 'borderRadius', label: '圆角', type: 'slider', min: 0, max: 100, step: 1, unit: 'px',
+        { prop: 'width', label: t('宽度'), type: 'dimension' },
+        { prop: 'height', label: t('高度'), type: 'dimension' },
+        { prop: 'maxWidth', label: t('最大宽度'), type: 'dimension' },
+        { prop: 'minHeight', label: t('最小高度'), type: 'dimension' },
+        { prop: 'borderRadius', label: t('圆角'), type: 'slider', min: 0, max: 100, step: 1, unit: 'px',
           parse: function (v) { return parseFloat(v) || 0 } }
       ]
     },
     {
-      group: '定位', collapsed: true,
+      group: t('定位'), collapsed: true,
       controls: [
-        { prop: 'position', label: '定位方式', type: 'select',
+        { prop: 'position', label: t('定位方式'), type: 'select',
           options: [
-            { value: 'static', label: 'static 默认' }, { value: 'relative', label: 'relative 相对' },
-            { value: 'absolute', label: 'absolute 绝对' }, { value: 'fixed', label: 'fixed 固定' },
-            { value: 'sticky', label: 'sticky 粘性' }
+            { value: 'static', label: t('static 默认') }, { value: 'relative', label: t('relative 相对') },
+            { value: 'absolute', label: t('absolute 绝对') }, { value: 'fixed', label: t('fixed 固定') },
+            { value: 'sticky', label: t('sticky 粘性') }
           ] },
-        { prop: 'top', label: '上偏移', type: 'dimension' },
-        { prop: 'right', label: '右偏移', type: 'dimension' },
-        { prop: 'bottom', label: '下偏移', type: 'dimension' },
-        { prop: 'left', label: '左偏移', type: 'dimension' },
-        { prop: 'zIndex', label: '层级', type: 'slider', min: -10, max: 100, step: 1, unit: '',
+        { prop: 'top', label: t('上偏移'), type: 'dimension' },
+        { prop: 'right', label: t('右偏移'), type: 'dimension' },
+        { prop: 'bottom', label: t('下偏移'), type: 'dimension' },
+        { prop: 'left', label: t('左偏移'), type: 'dimension' },
+        { prop: 'zIndex', label: t('层级'), type: 'slider', min: -10, max: 100, step: 1, unit: '',
           parse: function (v) { return v === 'auto' ? 0 : parseInt(v) || 0 },
           format: function (v) { return String(Math.round(v)) } }
       ]
     },
     {
-      group: '边框', collapsed: true,
+      group: t('边框'), collapsed: true,
       controls: [
-        { prop: 'borderWidth', label: '粗细', type: 'slider', min: 0, max: 20, step: 1, unit: 'px',
+        { prop: 'borderWidth', label: t('粗细'), type: 'slider', min: 0, max: 20, step: 1, unit: 'px',
           parse: function (v) { return parseFloat(v) || 0 } },
-        { prop: 'borderStyle', label: '样式', type: 'select',
+        { prop: 'borderStyle', label: t('样式'), type: 'select',
           options: [
-            { value: 'none', label: 'none 无' }, { value: 'solid', label: 'solid 实线' },
-            { value: 'dashed', label: 'dashed 虚线' }, { value: 'dotted', label: 'dotted 点线' },
-            { value: 'double', label: 'double 双线' }
+            { value: 'none', label: t('none 无') }, { value: 'solid', label: t('solid 实线') },
+            { value: 'dashed', label: t('dashed 虚线') }, { value: 'dotted', label: t('dotted 点线') },
+            { value: 'double', label: t('double 双线') }
           ] },
-        { prop: 'borderColor', label: '颜色', type: 'color' }
+        { prop: 'borderColor', label: t('颜色'), type: 'color' }
       ]
     },
     {
-      group: '排版', collapsed: true,
+      group: t('排版'), collapsed: true,
       controls: [
-        { prop: 'fontFamily', label: '字体', type: 'dimension' },
-        { prop: 'fontStyle', label: '斜体', type: 'buttonGroup',
-          options: [{ value: 'normal', label: '正常' }, { value: 'italic', label: '斜体' }] },
-        { prop: 'textDecorationLine', label: '装饰', type: 'buttonGroup',
-          options: [{ value: 'none', label: '无' }, { value: 'underline', label: '下划线' }, { value: 'line-through', label: '删除线' }] },
-        { prop: 'textIndent', label: '首行缩进', type: 'slider', min: 0, max: 80, step: 1, unit: 'px',
+        { prop: 'fontFamily', label: t('字体'), type: 'dimension' },
+        { prop: 'fontStyle', label: t('斜体'), type: 'buttonGroup',
+          options: [{ value: 'normal', label: t('正常') }, { value: 'italic', label: t('斜体') }] },
+        { prop: 'textDecorationLine', label: t('装饰'), type: 'buttonGroup',
+          options: [{ value: 'none', label: t('无') }, { value: 'underline', label: t('下划线') }, { value: 'line-through', label: t('删除线') }] },
+        { prop: 'textIndent', label: t('首行缩进'), type: 'slider', min: 0, max: 80, step: 1, unit: 'px',
           parse: function (v) { return parseFloat(v) || 0 } },
-        { prop: 'whiteSpace', label: '换行', type: 'select',
+        { prop: 'whiteSpace', label: t('换行方式'), type: 'select',
           options: [
-            { value: 'normal', label: 'normal 自动' }, { value: 'nowrap', label: 'nowrap 不换' },
-            { value: 'pre-wrap', label: 'pre-wrap 保留换行' }, { value: 'pre-line', label: 'pre-line 合并空白' }
+            { value: 'normal', label: t('normal 自动') }, { value: 'nowrap', label: t('nowrap 不换') },
+            { value: 'pre-wrap', label: t('pre-wrap 保留换行') }, { value: 'pre-line', label: t('pre-line 合并空白') }
           ] },
-        { prop: 'wordSpacing', label: '词间距', type: 'slider', min: -5, max: 20, step: 0.5, unit: 'px',
+        { prop: 'wordSpacing', label: t('词间距'), type: 'slider', min: -5, max: 20, step: 0.5, unit: 'px',
           parse: function (v) { return v === 'normal' ? 0 : parseFloat(v) } }
       ]
     },
     {
-      group: '布局', collapsed: true,
+      group: t('布局'), collapsed: true,
       controls: [
-        { prop: 'display', label: '显示', type: 'select',
+        { prop: 'display', label: t('显示'), type: 'select',
           options: [
-            { value: 'block', label: 'block' }, { value: 'inline', label: 'inline' },
-            { value: 'inline-block', label: 'inline-block' }, { value: 'flex', label: 'flex' },
-            { value: 'inline-flex', label: 'inline-flex' }, { value: 'grid', label: 'grid' },
-            { value: 'none', label: 'none 隐藏' }
+            { value: 'block', label: t('block') }, { value: 'inline', label: t('inline') },
+            { value: 'inline-block', label: t('inline-block') }, { value: 'flex', label: t('flex') },
+            { value: 'inline-flex', label: t('inline-flex') }, { value: 'grid', label: t('grid') },
+            { value: 'none', label: t('none 隐藏') }
           ] },
-        { prop: 'flexDirection', label: 'Flex 方向', type: 'buttonGroup',
-          options: [{ value: 'row', label: '横' }, { value: 'column', label: '竖' }, { value: 'row-reverse', label: '横反' }, { value: 'column-reverse', label: '竖反' }] },
-        { prop: 'justifyContent', label: '主轴对齐', type: 'select',
+        { prop: 'flexDirection', label: t('Flex 方向'), type: 'buttonGroup',
+          options: [{ value: 'row', label: t('横') }, { value: 'column', label: t('竖') }, { value: 'row-reverse', label: t('横反') }, { value: 'column-reverse', label: t('竖反') }] },
+        { prop: 'justifyContent', label: t('主轴对齐'), type: 'select',
           options: [
-            { value: 'flex-start', label: 'start' }, { value: 'center', label: 'center' },
-            { value: 'flex-end', label: 'end' }, { value: 'space-between', label: 'between' },
-            { value: 'space-around', label: 'around' }, { value: 'space-evenly', label: 'evenly' }
+            { value: 'flex-start', label: t('start') }, { value: 'center', label: t('center') },
+            { value: 'flex-end', label: t('end') }, { value: 'space-between', label: t('between') },
+            { value: 'space-around', label: t('around') }, { value: 'space-evenly', label: t('evenly') }
           ] },
-        { prop: 'alignItems', label: '交叉轴对齐', type: 'select',
+        { prop: 'alignItems', label: t('交叉轴对齐'), type: 'select',
           options: [
-            { value: 'stretch', label: 'stretch' }, { value: 'flex-start', label: 'start' },
-            { value: 'center', label: 'center' }, { value: 'flex-end', label: 'end' },
-            { value: 'baseline', label: 'baseline' }
+            { value: 'stretch', label: t('stretch') }, { value: 'flex-start', label: t('start') },
+            { value: 'center', label: t('center') }, { value: 'flex-end', label: t('end') },
+            { value: 'baseline', label: t('baseline') }
           ] },
-        { prop: 'flexWrap', label: 'Flex 换行', type: 'buttonGroup',
-          options: [{ value: 'nowrap', label: '不换' }, { value: 'wrap', label: '换行' }] },
-        { prop: 'gap', label: '间距', type: 'slider', min: 0, max: 60, step: 1, unit: 'px',
+        { prop: 'flexWrap', label: t('Flex 换行'), type: 'buttonGroup',
+          options: [{ value: 'nowrap', label: t('不换') }, { value: 'wrap', label: t('换行') }] },
+        { prop: 'gap', label: t('子项间距'), type: 'slider', min: 0, max: 60, step: 1, unit: 'px',
           parse: function (v) { return parseFloat(v) || 0 } },
-        { prop: 'overflow', label: '溢出', type: 'select',
+        { prop: 'overflow', label: t('溢出'), type: 'select',
           options: [
-            { value: 'visible', label: 'visible 显示' }, { value: 'hidden', label: 'hidden 隐藏' },
-            { value: 'scroll', label: 'scroll 滚动' }, { value: 'auto', label: 'auto 自动' }
+            { value: 'visible', label: t('visible 显示') }, { value: 'hidden', label: t('hidden 隐藏') },
+            { value: 'scroll', label: t('scroll 滚动') }, { value: 'auto', label: t('auto 自动') }
           ] }
       ]
     },
     {
-      group: '阴影', collapsed: true,
+      group: t('阴影'), collapsed: true,
       controls: [
-        { prop: 'boxShadow', label: '盒阴影', type: 'shadow', hasSpread: true },
-        { prop: 'textShadow', label: '文字阴影', type: 'shadow', hasSpread: false }
+        { prop: 'boxShadow', label: t('盒阴影'), type: 'shadow', hasSpread: true },
+        { prop: 'textShadow', label: t('文字阴影'), type: 'shadow', hasSpread: false }
       ]
     },
     {
-      group: '效果', collapsed: true,
+      group: t('效果'), collapsed: true,
       controls: [
-        { prop: 'filter', subFn: 'blur', label: '模糊', type: 'compoundSlider', min: 0, max: 20, step: 0.5, unit: 'px', defaultVal: 0 },
-        { prop: 'filter', subFn: 'brightness', label: '亮度', type: 'compoundSlider', min: 0, max: 3, step: 0.05, unit: '', defaultVal: 1 },
-        { prop: 'filter', subFn: 'contrast', label: '对比度', type: 'compoundSlider', min: 0, max: 3, step: 0.05, unit: '', defaultVal: 1 },
-        { prop: 'filter', subFn: 'saturate', label: '饱和度', type: 'compoundSlider', min: 0, max: 3, step: 0.05, unit: '', defaultVal: 1 },
-        { prop: 'filter', subFn: 'grayscale', label: '灰度', type: 'compoundSlider', min: 0, max: 1, step: 0.05, unit: '', defaultVal: 0 },
-        { prop: 'backdropFilter', subFn: 'blur', label: '背景模糊', type: 'compoundSlider', min: 0, max: 30, step: 1, unit: 'px', defaultVal: 0 }
+        { prop: 'filter', subFn: 'blur', label: t('模糊'), type: 'compoundSlider', min: 0, max: 20, step: 0.5, unit: 'px', defaultVal: 0 },
+        { prop: 'filter', subFn: 'brightness', label: t('亮度'), type: 'compoundSlider', min: 0, max: 3, step: 0.05, unit: '', defaultVal: 1 },
+        { prop: 'filter', subFn: 'contrast', label: t('对比度'), type: 'compoundSlider', min: 0, max: 3, step: 0.05, unit: '', defaultVal: 1 },
+        { prop: 'filter', subFn: 'saturate', label: t('饱和度'), type: 'compoundSlider', min: 0, max: 3, step: 0.05, unit: '', defaultVal: 1 },
+        { prop: 'filter', subFn: 'grayscale', label: t('灰度'), type: 'compoundSlider', min: 0, max: 1, step: 0.05, unit: '', defaultVal: 0 },
+        { prop: 'backdropFilter', subFn: 'blur', label: t('背景模糊'), type: 'compoundSlider', min: 0, max: 30, step: 1, unit: 'px', defaultVal: 0 }
       ]
     },
     {
-      group: '变换', collapsed: true,
+      group: t('变换'), collapsed: true,
       controls: [
-        { prop: 'transform', subFn: 'rotate', label: '旋转', type: 'compoundSlider', min: -180, max: 180, step: 1, unit: 'deg', defaultVal: 0 },
-        { prop: 'transform', subFn: 'scale', label: '缩放', type: 'compoundSlider', min: 0.1, max: 3, step: 0.05, unit: '', defaultVal: 1 },
-        { prop: 'transform', subFn: 'translateX', label: '水平位移', type: 'compoundSlider', min: -200, max: 200, step: 1, unit: 'px', defaultVal: 0 },
-        { prop: 'transform', subFn: 'translateY', label: '垂直位移', type: 'compoundSlider', min: -200, max: 200, step: 1, unit: 'px', defaultVal: 0 }
+        { prop: 'transform', subFn: 'rotate', label: t('旋转'), type: 'compoundSlider', min: -180, max: 180, step: 1, unit: 'deg', defaultVal: 0 },
+        { prop: 'transform', subFn: 'scale', label: t('缩放'), type: 'compoundSlider', min: 0.1, max: 3, step: 0.05, unit: '', defaultVal: 1 },
+        { prop: 'transform', subFn: 'translateX', label: t('水平位移'), type: 'compoundSlider', min: -200, max: 200, step: 1, unit: 'px', defaultVal: 0 },
+        { prop: 'transform', subFn: 'translateY', label: t('垂直位移'), type: 'compoundSlider', min: -200, max: 200, step: 1, unit: 'px', defaultVal: 0 }
       ]
     }
   ]
@@ -415,35 +479,35 @@
     dom.root = el('div', null)
     dom.root.id = PREFIX + '-root'
 
-    dom.toggle = el('button', PREFIX + '-toggle', { title: '切换编辑模式 (Alt+E)', html: ICON_EDIT })
+    dom.toggle = el('button', PREFIX + '-toggle', { title: t('切换编辑模式 (Alt+E)'), html: ICON_EDIT })
     dom.toggle.addEventListener('click', toggleEdit)
 
     dom.toolbar = el('div', PREFIX + '-toolbar')
-    var exitBtn = el('button', PREFIX + '-tb-btn exit', { html: ICON_X, title: '退出编辑' })
+    var exitBtn = el('button', PREFIX + '-tb-btn exit', { html: ICON_X, title: t('退出编辑'), 'data-ve-action': 'exit' })
     exitBtn.addEventListener('click', exitEdit)
     dom.breadcrumb = el('span', PREFIX + '-breadcrumb')
-    var copyBtn = el('button', PREFIX + '-tb-btn', { text: '复制 HTML' })
+    var copyBtn = el('button', PREFIX + '-tb-btn', { text: t('复制 HTML'), 'data-ve-action': 'copy-html' })
     copyBtn.addEventListener('click', copyHTML)
-    var dlBtn = el('button', PREFIX + '-tb-btn primary', { text: '下载 HTML' })
+    var dlBtn = el('button', PREFIX + '-tb-btn primary', { text: t('保存到本地'), 'data-ve-action': 'download-html' })
     dlBtn.addEventListener('click', downloadHTML)
-    dom.layoutBtn = el('button', PREFIX + '-tb-btn', { text: '版式', title: '显示/隐藏样式面板' })
+    dom.layoutBtn = el('button', PREFIX + '-tb-btn', { text: t('版式'), title: t('显示/隐藏样式面板'), 'data-ve-action': 'toggle-layout' })
     dom.layoutBtn.addEventListener('click', toggleLayoutPanel)
-    dom.textBtn = el('button', PREFIX + '-tb-btn', { text: '编辑文字', title: '编辑选中元素里的文字 (Alt+T)' })
-    dom.textBtn.addEventListener('click', startTextEdit)
-    dom.undoBtn = el('button', PREFIX + '-tb-btn', { text: '撤销', title: '撤销上一步 (Alt+Z)' })
+    dom.textBtn = el('button', PREFIX + '-tb-btn', { text: t('编辑文字'), title: t('点击页面文字直接编辑 (Alt+T)'), 'data-ve-action': 'edit-text' })
+    dom.textBtn.addEventListener('click', toggleTextEdit)
+    dom.undoBtn = el('button', PREFIX + '-tb-btn', { text: t('撤销'), title: t('撤销上一步 (Alt+Z)'), 'data-ve-action': 'undo' })
     dom.undoBtn.addEventListener('click', undo)
-    dom.redoBtn = el('button', PREFIX + '-tb-btn', { text: '复原', title: '复原刚刚撤销的操作 (Alt+Y)' })
+    dom.redoBtn = el('button', PREFIX + '-tb-btn', { text: t('复原'), title: t('复原刚刚撤销的操作 (Alt+Y)'), 'data-ve-action': 'redo' })
     dom.redoBtn.addEventListener('click', redo)
     dom.pager = el('div', PREFIX + '-pager')
-    dom.prevPageBtn = el('button', PREFIX + '-tb-btn', { text: '上一页', title: '切换到上一页 (Alt+←)' })
+    dom.prevPageBtn = el('button', PREFIX + '-tb-btn', { text: t('上一页'), title: t('切换到上一页 (Alt+←)'), 'data-ve-action': 'prev-page' })
     bindPress(dom.prevPageBtn, function () { goPage(-1) })
     dom.pageLabel = el('span', PREFIX + '-page-label', { text: '1/1' })
-    dom.nextPageBtn = el('button', PREFIX + '-tb-btn', { text: '下一页', title: '切换到下一页 (Alt+→)' })
+    dom.nextPageBtn = el('button', PREFIX + '-tb-btn', { text: t('下一页'), title: t('切换到下一页 (Alt+→)'), 'data-ve-action': 'next-page' })
     bindPress(dom.nextPageBtn, function () { goPage(1) })
     dom.pager.appendChild(dom.prevPageBtn)
     dom.pager.appendChild(dom.pageLabel)
     dom.pager.appendChild(dom.nextPageBtn)
-    var reloadBtn = el('button', PREFIX + '-tb-btn', { text: '重新载入', title: '重新载入当前文件/入口页' })
+    var reloadBtn = el('button', PREFIX + '-tb-btn', { text: t('重新载入'), title: t('重新载入当前文件/入口页'), 'data-ve-action': 'reload' })
     reloadBtn.addEventListener('click', reloadPage)
     dom.toolbar.appendChild(exitBtn)
     dom.toolbar.appendChild(dom.breadcrumb)
@@ -479,17 +543,19 @@
 
   // ========== Control Renderers ==========
 
+  var _renderTimer = null
   function renderPanel() {
     if (!state.layoutOpen) return
+    clearTimeout(_renderTimer)
     dom.panelInner.classList.add('fade')
-    setTimeout(function () {
+    _renderTimer = setTimeout(function () {
       dom.panelInner.innerHTML = ''
       var title = el('div', PREFIX + '-panel-title')
-      title.appendChild(el('span', null, { text: '样式面板' }))
+      title.appendChild(el('span', null, { text: t('样式面板') }))
       if (!state.selected) {
-        title.appendChild(el('span', PREFIX + '-panel-subtitle', { text: '未选择' }))
+        title.appendChild(el('span', PREFIX + '-panel-subtitle', { text: t('未选择') }))
         dom.panelInner.appendChild(title)
-        dom.panelInner.appendChild(el('div', PREFIX + '-panel-empty', { text: '进入编辑模式后，点击页面里的标题、段落、卡片或按钮开始调整。' }))
+        dom.panelInner.appendChild(el('div', PREFIX + '-panel-empty', { text: t('进入编辑模式后，点击页面里的标题、段落、卡片或按钮开始调整。') }))
         dom.panelInner.classList.remove('fade')
         return
       }
@@ -501,6 +567,8 @@
       var rect = target.getBoundingClientRect()
       info.appendChild(el('span', PREFIX + '-el-dim', { text: Math.round(rect.width) + ' × ' + Math.round(rect.height) }))
       dom.panelInner.appendChild(info)
+      var link = closestAnchor(target)
+      if (link) dom.panelInner.appendChild(renderLinkSection(link))
 
       GROUPS.forEach(function (g) {
         var section = el('div', PREFIX + '-group' + (g.collapsed ? ' collapsed' : ''))
@@ -514,6 +582,38 @@
       })
       dom.panelInner.classList.remove('fade')
     }, 80)
+  }
+
+  function closestAnchor(target) {
+    if (!target || !target.closest) return null
+    var link = target.closest('a')
+    return link && !isVE(link) ? link : null
+  }
+
+  function renderLinkSection(link) {
+    var section = el('div', PREFIX + '-group')
+    var header = el('div', PREFIX + '-group-hd', { text: t('链接') })
+    header.addEventListener('click', function () { section.classList.toggle('collapsed') })
+    section.appendChild(header)
+    var body = el('div', PREFIX + '-group-bd')
+    body.appendChild(renderAttributeInput(link, 'href', t('跳转地址'), 'https://example.com 或 #section'))
+    body.appendChild(renderAttributeInput(link, 'target', t('打开方式'), '_blank / _self'))
+    section.appendChild(body)
+    return section
+  }
+
+  function renderAttributeInput(target, attr, label, placeholder) {
+    var wrap = el('div', PREFIX + '-ctrl')
+    wrap.appendChild(el('div', PREFIX + '-ctrl-label', { text: label }))
+    var input = el('input', PREFIX + '-dim-input')
+    input.type = 'text'
+    input.value = target.getAttribute(attr) || ''
+    input.placeholder = placeholder || ''
+    input.addEventListener('change', function () {
+      applyAttribute(target, attr, input.value.trim())
+    })
+    wrap.appendChild(input)
+    return wrap
   }
 
   function renderControl(ctrl) {
@@ -623,7 +723,7 @@
 
   function buildSpacing(wrap, ctrl) {
     var sides = ['Top', 'Right', 'Bottom', 'Left']
-    var labels = ['上', '右', '下', '左']
+    var labels = LANG === 'zh' ? ['上', '右', '下', '左'] : ['T', 'R', 'B', 'L']
     var grid = el('div', PREFIX + '-sp-grid')
     sides.forEach(function (side, i) {
       var col = el('div')
@@ -658,9 +758,9 @@
     var subs = [
       { key: 'x', label: 'X', min: -50, max: 50 },
       { key: 'y', label: 'Y', min: -50, max: 50 },
-      { key: 'blur', label: '糊', min: 0, max: 50 }
+      { key: 'blur', label: t('糊'), min: 0, max: 50 }
     ]
-    if (ctrl.hasSpread) subs.push({ key: 'spread', label: '展', min: -20, max: 50 })
+    if (ctrl.hasSpread) subs.push({ key: 'spread', label: t('展'), min: -20, max: 50 })
 
     function apply() { applyStyle(ctrl.prop, composeShadow(s, ctrl.hasSpread)) }
 
@@ -730,6 +830,14 @@
     updateSelOverlay()
   }
 
+  function applyAttribute(target, attr, value) {
+    if (!target || isVE(target)) return
+    pushHistory('attribute')
+    if (value !== '') target.setAttribute(attr, value)
+    else target.removeAttribute(attr)
+    updateSelOverlay()
+  }
+
   function pushHistory(reason) {
     if (state.restoring) return
     state.history.push({ html: exportHTML(), reason: reason || 'change' })
@@ -761,7 +869,7 @@
 
   function undo() {
     if (!state.history.length) {
-      showToast('没有可撤销的操作')
+      showToast(t('没有可撤销的操作'))
       return
     }
     var item = state.history.pop()
@@ -777,7 +885,7 @@
 
   function redo() {
     if (!state.future.length) {
-      showToast('没有可复原的操作')
+      showToast(t('没有可复原的操作'))
       return
     }
     var item = state.future.pop()
@@ -794,7 +902,7 @@
   function updateToolbarState() {
     if (dom.undoBtn) dom.undoBtn.disabled = state.history.length === 0
     if (dom.redoBtn) dom.redoBtn.disabled = state.future.length === 0
-    if (dom.textBtn) dom.textBtn.disabled = !state.selected || !isTextEditable(state.selected)
+    if (dom.textBtn) dom.textBtn.classList.toggle('active', state.textFlow)
     if (dom.layoutBtn) {
       dom.layoutBtn.classList.toggle('active', state.layoutOpen)
       dom.layoutBtn.disabled = false
@@ -809,18 +917,33 @@
     if (state.layoutOpen) renderPanel()
   }
 
+  function toggleTextEdit() {
+    if (!state.active) return
+    state.textFlow = !state.textFlow
+    updateToolbarState()
+    if (state.textFlow && state.selected && isTextEditable(state.selected)) {
+      startTextEdit()
+      return
+    }
+    if (!state.textFlow && state.textEditing) finishTextEdit()
+    showToast(state.textFlow ? t('文字编辑已开启') : t('文字编辑已关闭'))
+  }
+
   function isTextEditable(target) {
     if (!target || isVE(target)) return false
     var tag = target.tagName ? target.tagName.toLowerCase() : ''
     return ['script', 'style', 'html', 'head', 'body', 'img', 'video', 'audio', 'canvas', 'svg', 'iframe'].indexOf(tag) === -1
   }
 
-  function startTextEdit() {
-    var target = state.selected
+  function startTextEdit(target) {
+    target = target || state.selected
     if (!isTextEditable(target)) {
-      showToast('这个元素不适合直接编辑文字')
+      showToast(t('这个元素不适合直接编辑文字'))
       return
     }
+    if (state.textEditing === target) return
+    if (state.textEditing) finishTextEdit()
+    state.selected = target
     pushHistory('text')
     state.textEditing = target
     if (!target.hasAttribute('data-ve-prev-contenteditable')) {
@@ -829,9 +952,10 @@
     target.setAttribute('contenteditable', 'true')
     target.setAttribute('data-ve-editing', '1')
     target.focus()
+    placeCaretAtEnd(target)
     hideOv(dom.hoverOv)
     updateSelOverlay()
-    showToast('正在编辑文字 · 完成后点页面空白处或按 Esc')
+    showToast(t('正在编辑文字 · 完成后点页面空白处或按 Esc'))
   }
 
   function finishTextEdit() {
@@ -842,21 +966,31 @@
     target.removeAttribute('data-ve-prev-contenteditable')
     state.textEditing = null
     if (state.selected === target) updateSelOverlay()
-    showToast('文字已更新')
+    showToast(t('文字已更新'))
   }
 
-  function restoreContenteditable(el) {
-    if (!el || !el.hasAttribute('data-ve-prev-contenteditable')) {
-      if (el) el.removeAttribute('contenteditable')
+  function placeCaretAtEnd(target) {
+    if (!target || !window.getSelection || !document.createRange) return
+    var range = document.createRange()
+    range.selectNodeContents(target)
+    range.collapse(false)
+    var sel = window.getSelection()
+    sel.removeAllRanges()
+    sel.addRange(range)
+  }
+
+  function restoreContenteditable(node) {
+    if (!node || !node.hasAttribute('data-ve-prev-contenteditable')) {
+      if (node) node.removeAttribute('contenteditable')
       return
     }
-    var prev = el.getAttribute('data-ve-prev-contenteditable')
-    if (prev === '__ve_absent') el.removeAttribute('contenteditable')
-    else el.setAttribute('contenteditable', prev)
+    var prev = node.getAttribute('data-ve-prev-contenteditable')
+    if (prev === '__ve_absent') node.removeAttribute('contenteditable')
+    else node.setAttribute('contenteditable', prev)
   }
 
   function reloadPage() {
-    if (confirm('重新载入会放弃未复制/下载的修改，确定继续吗？')) {
+    if (confirm(t('重新载入会放弃未复制/保存的修改，确定继续吗？'))) {
       window.location.reload()
     }
   }
@@ -1366,6 +1500,7 @@
     dom.breadcrumb.textContent = elPath(target)
     updateToolbarState()
     if (state.layoutOpen) renderPanel()
+    if (state.textFlow && isTextEditable(target)) startTextEdit(target)
   }
 
   function deselectElement() {
@@ -1390,12 +1525,12 @@
     state.active = true
     dom.toggle.classList.add('active')
     dom.toggle.innerHTML = ICON_X
-    dom.toggle.title = '退出编辑模式 (Alt+E)'
+    dom.toggle.title = t('退出编辑模式 (Alt+E)')
     dom.toolbar.classList.add('visible')
     state.layoutOpen = false
     refreshPages()
     updateToolbarState()
-    showToast('点击选中元素 · 按住 Ctrl 点击可触发页面原有功能', 3000)
+    showToast(t('点击选中元素 · 按住 Ctrl 点击可触发页面原有功能'), 3000)
     document.addEventListener('mousemove', onMouseMove, true)
     document.addEventListener('mousedown', onMouseDown, true)
     document.addEventListener('click', onClickCapture, true)
@@ -1405,10 +1540,10 @@
 
   function exitEdit() {
     finishTextEdit()
-    state.active = false; state.selected = null; state.hovered = null
+    state.active = false; state.selected = null; state.hovered = null; state.textFlow = false
     dom.toggle.classList.remove('active')
     dom.toggle.innerHTML = ICON_EDIT
-    dom.toggle.title = '切换编辑模式 (Alt+E)'
+    dom.toggle.title = t('切换编辑模式 (Alt+E)')
     dom.toolbar.classList.remove('visible')
     dom.panel.classList.remove('visible')
     state.layoutOpen = false
@@ -1425,7 +1560,6 @@
   // ========== Export ==========
 
   function exportHTML() {
-    finishTextEdit()
     var clone = document.documentElement.cloneNode(true)
     cleanEditorArtifacts(clone)
     return '<!DOCTYPE html>\n' + clone.outerHTML
@@ -1452,14 +1586,15 @@
     var absolute
     try { absolute = new URL(src, window.location.href).href }
     catch (e) { absolute = src }
-    return absolute === editorSrc || /(^|\/)editor\.js(?:[?#].*)?$/i.test(absolute)
+    return absolute === editorSrc
   }
 
   function copyHTML() {
+    finishTextEdit()
     var html = exportHTML()
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(html).then(
-        function () { showToast('已复制到剪贴板') },
+        function () { showToast(t('已复制到剪贴板')) },
         function () { fallbackCopy(html) }
       )
     } else { fallbackCopy(html) }
@@ -1471,21 +1606,22 @@
     ta.setAttribute('readonly', '')
     document.body.appendChild(ta); ta.select()
     if (ta.setSelectionRange) ta.setSelectionRange(0, ta.value.length)
-    try { document.execCommand('copy'); showToast('已复制到剪贴板') }
-    catch (e) { showToast('复制失败，请手动选择导出的 HTML') }
+    try { document.execCommand('copy'); showToast(t('已复制到剪贴板')) }
+    catch (e) { showToast(t('复制失败，请手动选择导出的 HTML')) }
     removeNode(ta)
   }
 
   function downloadHTML() {
+    finishTextEdit()
     var html = exportHTML()
     var blob = new Blob([html], { type: 'text/html;charset=utf-8' })
     if (navigator.msSaveOrOpenBlob) {
       navigator.msSaveOrOpenBlob(blob, 'page-' + Date.now() + '.html')
-      showToast('已下载')
+      showToast(t('已保存到本地'))
       return
     }
     if (!window.URL || !URL.createObjectURL) {
-      showToast('当前浏览器不支持直接下载，请先复制 HTML')
+      showToast(t('当前浏览器不支持直接保存，请先复制 HTML'))
       return
     }
     var url = URL.createObjectURL(blob)
@@ -1507,7 +1643,7 @@
       removeNode(a)
       URL.revokeObjectURL(url)
     }, 1000)
-    showToast('已下载')
+    showToast(t('已保存到本地'))
   }
 
   // ========== Keyboard ==========
@@ -1516,7 +1652,7 @@
     if (e.altKey && e.key.toLowerCase() === 'e') { e.preventDefault(); toggleEdit(); return }
     if (!state.active) return
     if (e.key === 'Escape') { e.preventDefault(); state.textEditing ? finishTextEdit() : (state.selected ? deselectElement() : exitEdit()); return }
-    if (e.altKey && e.key.toLowerCase() === 't') { e.preventDefault(); startTextEdit(); return }
+    if (e.altKey && e.key.toLowerCase() === 't') { e.preventDefault(); toggleTextEdit(); return }
     if (e.altKey && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); return }
     if (e.altKey && e.key.toLowerCase() === 'y') { e.preventDefault(); redo(); return }
     if (e.altKey && e.key === 'ArrowLeft' && hasUsablePager()) { e.preventDefault(); goPage(-1); return }
