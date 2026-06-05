@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>可视化编辑器 Demo</title>
+<title>AI HTML 修图工具 Demo</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #263238; line-height: 1.8; background: #f6f8fb; }
@@ -41,14 +41,14 @@
 <body>
 
 <section class="hero">
-  <h1>HTML 可视化编辑器</h1>
-  <p>从入口页导入后会自动进入编辑模式；直接引用脚本时，也可以用右下角按钮或 Alt+E 手动切换</p>
+  <h1>AI HTML 可视化修图工具</h1>
+  <p>把 AI 生成的静态 HTML 放进来，像修图一样做最后 10% 的文字、样式和版面微调</p>
 </section>
 
 <div class="container">
   <h2>这是什么？</h2>
-  <p>这是一个轻量级的 HTML 可视化编辑工具。它作为一段 JavaScript 脚本注入到任何 HTML 页面中，让页面自身具备可视化编辑能力。</p>
-  <p>不需要安装任何软件，不需要学习复杂的工具，只需要一个 <code>&lt;script&gt;</code> 标签。</p>
+  <p>这是一个面向 AI 生成 HTML 的可视化精修工具。它作为一段 JavaScript 脚本注入到静态 HTML 页面中，让页面自身具备可视化微调能力。</p>
+  <p>它不替代 Vue、React 或专业 IDE，只解决 AI 生成页面之后，发布前还差一点点的问题。</p>
 
   <div class="highlight">
     <strong>使用方式：</strong>在任意 HTML 文件底部加入 <code>&lt;script src="editor.js"&gt;&lt;/script&gt;</code>，然后用浏览器打开即可。
@@ -57,7 +57,7 @@
   <h2>核心功能</h2>
   <div class="card-grid">
     <div class="card">
-      <h3>文字调整</h3>
+      <h3>AI 文案微调</h3>
       <p>字号、行高、字间距、字重、对齐方式、文字颜色——滑块和选择器直接调，所见即所得。</p>
     </div>
     <div class="card">
@@ -69,8 +69,8 @@
       <p>宽度、高度、圆角半径——数值输入或滑块调整，实时预览效果。</p>
     </div>
     <div class="card">
-      <h3>一键导出</h3>
-      <p>编辑完成后复制或下载修改后的 HTML，自动清除编辑器代码，输出干净的成品。</p>
+      <h3>HTML / PNG 导出</h3>
+      <p>编辑完成后可下载干净 HTML，也可以把当前页或全部页面导出成 PNG 图片。</p>
     </div>
   </div>
 
@@ -87,13 +87,13 @@
   </ul>
 
   <blockquote>
-    "最好的工具是让你忘记工具本身，专注于创作。"
+    "先让 AI 生成 90%，再用可视化工具把最后 10% 修顺。"
   </blockquote>
 
   <h2>适用场景</h2>
-  <p>任何需要对 HTML 页面进行微调的场景：</p>
+  <p>适合 AI 已经生成了 HTML，但还需要人工过一遍的场景：</p>
   <ul>
-    <li>AI 生成的网页需要手动调整字号、配色</li>
+    <li>AI 生成的网页需要手动调整字号、配色和间距</li>
     <li>公众号文章排版的最后一步微调</li>
     <li>PPT 转 HTML 后的布局调整</li>
     <li>静态页面的快速原型迭代</li>
@@ -107,7 +107,7 @@
 </div>
 
 <div class="footer">
-  HTML Visual Editor Demo — 所有修改实时生效，导出时自动清除编辑器代码
+  AI HTML Visual Editor Demo — 所有修改实时生效，导出时自动清除编辑器代码
 </div>
 
 <script src="editor.js" data-ve="1"></script>

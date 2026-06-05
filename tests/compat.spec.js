@@ -17,18 +17,27 @@ test.afterAll(async () => {
   await new Promise(resolve => server.close(resolve))
 })
 
+async function ensureEditMode(page) {
+  try {
+    await expect(page.locator('.__ve-toolbar.visible')).toBeVisible({ timeout: 10000 })
+  } catch (e) {
+    await page.locator('.__ve-toggle').click()
+    await expect(page.locator('.__ve-toolbar.visible')).toBeVisible()
+  }
+}
+
 test('loads demo and automatically enters visual editing mode', async ({ page }) => {
   await page.goto(`${baseURL}/index.html`)
 
-  await expect(page.locator('h1')).toContainText('HTML 可视化编辑器')
+  await expect(page.locator('h1')).toContainText('AI HTML 可视化修图工具')
   await expect(page.getByRole('tab', { name: '上传文件' })).toHaveAttribute('aria-selected', 'true')
   await expect(page.locator('#btn-start')).toBeDisabled()
-  await expect(page.locator('#status')).toContainText('上传 HTML 后会自动进入编辑模式')
+  await expect(page.locator('#status')).toContainText('AI 生成的 HTML')
 
   await page.locator('#btn-demo').click()
   await expect(page.locator('.__ve-toolbar.visible')).toBeVisible({ timeout: 10000 })
   await expect(page.locator('.__ve-toggle')).toHaveClass(/active/)
-  await expect(page.locator('h1')).toContainText('HTML 可视化编辑器')
+  await expect(page.locator('h1')).toContainText('AI HTML 可视化修图工具')
 
   await expect(page.locator('.__ve-panel.visible')).toHaveCount(0)
   await expect(page.locator('[data-ve-action="toggle-layout"]')).toBeVisible()
@@ -251,6 +260,130 @@ test('strips old editor artifacts before rendering pasted html', async ({ page }
   expect(result.gridDisplay).toBe('grid')
   expect(result.headingEditable).toBe(false)
   expect(result.nativeEditable).toBe(true)
+})
+
+test('edits common content attributes from the panel', async ({ page }) => {
+  await page.goto(`${baseURL}/index.html`)
+  await page.getByRole('tab', { name: '粘贴代码' }).click()
+  await page.locator('#html-input').fill(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { margin: 0; padding: 160px 40px 40px; font-family: sans-serif; }
+    a, button { display: inline-block; margin: 12px; padding: 12px 18px; font-size: 18px; }
+    img { display: block; width: 120px; height: 80px; margin: 24px 12px; object-fit: cover; background: #ddd; }
+  </style>
+</head>
+<body>
+  <a href="https://old.example">Old link</a>
+  <button type="button">Old button</button>
+  <img src="old.png" alt="Old alt">
+</body>
+</html>`)
+
+  await page.locator('#btn-start').click()
+  await ensureEditMode(page)
+  await page.locator('a').click()
+  await page.locator('[data-ve-action="toggle-layout"]').click()
+  const linkPanel = page.locator('.__ve-panel').filter({ hasText: /链接|Link/ })
+  await expect(linkPanel).toBeVisible()
+  const hrefInput = page.locator('.__ve-panel input').first()
+  await hrefInput.fill('https://new.example')
+  await hrefInput.blur()
+  await page.locator('.__ve-panel select').first().selectOption('_blank')
+  await expect(page.locator('a')).toHaveAttribute('href', 'https://new.example')
+  await expect(page.locator('a')).toHaveAttribute('target', '_blank')
+
+  await page.getByRole('button', { name: 'Old button', exact: true }).click()
+  const buttonBox = page.locator('.__ve-content-box').filter({ hasText: /button/ })
+  await expect(buttonBox).toBeVisible()
+  await buttonBox.locator('input').fill('New button')
+  await buttonBox.locator('input').blur()
+  await expect(page.getByRole('button', { name: 'New button', exact: true })).toBeVisible()
+
+  await page.locator('img').click()
+  const imageBox = page.locator('.__ve-content-box').filter({ hasText: /img/ })
+  await expect(imageBox).toBeVisible()
+  await imageBox.locator('input').nth(0).fill('new.png')
+  await imageBox.locator('input').nth(0).blur()
+  await imageBox.locator('input').nth(1).fill('New alt')
+  await imageBox.locator('input').nth(1).blur()
+  await expect(page.locator('img')).toHaveAttribute('src', /new\.png$/)
+  await expect(page.locator('img')).toHaveAttribute('alt', 'New alt')
+})
+
+test('selects whole blocks from the structure tree', async ({ page }) => {
+  await page.goto(`${baseURL}/index.html`)
+  await page.getByRole('tab', { name: '粘贴代码' }).click()
+  await page.locator('#html-input').fill(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { margin: 0; padding: 120px 40px 40px; font-family: sans-serif; }
+    header, section, footer { padding: 24px; margin-bottom: 18px; border: 1px solid #ddd; }
+    img { width: 120px; height: 80px; background: #ddd; display: block; }
+  </style>
+</head>
+<body>
+  <header><nav><a href="#intro">Intro link</a></nav></header>
+  <main>
+    <section id="intro"><h1>Intro section</h1><button type="button">Primary action</button><img src="hero.png" alt="Hero image"></section>
+  </main>
+  <footer>Footer text</footer>
+</body>
+</html>`)
+
+  await page.locator('#btn-start').click()
+  await ensureEditMode(page)
+  await page.locator('[data-ve-action="toggle-layout"]').click()
+  await expect(page.locator('.__ve-tree-box')).toContainText('header')
+  await expect(page.locator('.__ve-tree-box')).toContainText('nav')
+  await expect(page.locator('.__ve-tree-box')).toContainText('section#intro')
+  await expect(page.locator('.__ve-tree-box')).toContainText('button')
+  await expect(page.locator('.__ve-tree-box')).toContainText('img')
+  await expect(page.locator('.__ve-tree-box')).toContainText('footer')
+
+  await page.locator('.__ve-tree-item').filter({ hasText: 'section#intro' }).click()
+  await expect(page.locator('.__ve-panel-title .__ve-panel-subtitle')).toHaveText('section')
+  await expect(page.locator('.__ve-sel-ov')).toBeVisible()
+})
+
+test('exports current page and all pages as png downloads', async ({ page }) => {
+  await page.goto(`${baseURL}/index.html`)
+  await page.getByRole('tab', { name: '粘贴代码' }).click()
+  await page.locator('#html-input').fill(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { margin: 0; font-family: sans-serif; background: white; }
+    section { min-height: 100vh; display: grid; place-items: center; font-size: 48px; }
+    section:nth-child(1) { background: #eff6ff; }
+    section:nth-child(2) { background: #fef3c7; }
+  </style>
+</head>
+<body>
+  <section>PNG page 1</section>
+  <section>PNG page 2</section>
+</body>
+</html>`)
+
+  await page.locator('#btn-start').click()
+  await ensureEditMode(page)
+
+  const currentDownloadPromise = page.waitForEvent('download')
+  await page.locator('[data-ve-action="export-png"]').click()
+  const currentDownload = await currentDownloadPromise
+  expect(currentDownload.suggestedFilename()).toMatch(/\.png$/)
+  expect(await currentDownload.failure()).toBeNull()
+
+  const downloads = []
+  page.on('download', download => downloads.push(download))
+  await page.locator('[data-ve-action="export-all-png"]').click()
+  await expect.poll(() => downloads.length, { timeout: 30000 }).toBe(2)
+  expect(downloads.map(download => download.suggestedFilename())).toEqual(['page-01.png', 'page-02.png'])
 })
 
 test('next page scrolls an inner page container', async ({ page }) => {

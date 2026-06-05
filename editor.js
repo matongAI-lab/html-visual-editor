@@ -58,6 +58,12 @@
     '灰度': 'Grayscale', '背景模糊': 'Backdrop Blur',
     '旋转': 'Rotate', '缩放': 'Scale', '水平位移': 'Move X', '垂直位移': 'Move Y',
     '链接': 'Link', '跳转地址': 'URL', '打开方式': 'Target',
+    '导出 PNG': 'PNG', '全部 PNG': 'All PNG',
+    '页面结构': 'Structure', '区块 / 链接 / 按钮 / 图片': 'Blocks / Links / Buttons / Images',
+    '当前区块：': 'Block: ', '当前区块：未识别': 'Block: None',
+    '选中区块': 'Select', '复制区块': 'Copy', '上移区块': 'Move Up', '下移区块': 'Move Down', '删除区块': 'Delete',
+    '内容属性：': 'Content: ', '链接文字': 'Link Text', '按钮文字': 'Button Text', '图片地址 src': 'Image URL', '图片 alt': 'Image Alt',
+    '当前窗口打开': 'Same Tab', '新窗口打开': 'New Tab',
     '样式面板': 'Style Panel', '未选择': 'None',
     '进入编辑模式后，点击页面里的标题、段落、卡片或按钮开始调整。': 'Enter edit mode, then click any element to start.',
     '版式': 'Styles', '编辑文字': 'Edit Text', '撤销': 'Undo', '复原': 'Redo',
@@ -79,6 +85,14 @@
     '这个元素不适合直接编辑文字': 'This element cannot be text-edited',
     '正在编辑文字 · 完成后点页面空白处或按 Esc': 'Editing text · Click outside or press Esc when done',
     '文字已更新': 'Text updated',
+    '属性已更新': 'Attribute updated', '打开方式已更新': 'Target updated',
+    '已复制区块 HTML': 'Block HTML copied', '已选中整个区块': 'Block selected',
+    '区块已上移': 'Block moved up', '区块已下移': 'Block moved down',
+    '删除当前区块？可用撤销恢复。': 'Delete this block? Undo can restore it.',
+    '区块已删除': 'Block deleted',
+    'PNG 已导出': 'PNG exported', '当前页 PNG 已导出': 'Current PNG exported',
+    'PNG 导出失败：请确认页面图片未被跨域限制': 'PNG export failed. Check cross-origin images.',
+    '开始导出 ': 'Exporting ', ' 页 PNG': ' PNG pages', '全部 PNG 已导出': 'All PNG exported',
     '文字编辑已开启': 'Text edit mode on', '文字编辑已关闭': 'Text edit mode off',
     '重新载入会放弃未复制/保存的修改，确定继续吗？': 'Reload will discard unsaved changes. Continue?'
   }
@@ -370,6 +384,26 @@
 ' + P + 'el-info{padding:12px 14px;border-bottom:1px solid rgba(148,163,184,.12);display:flex;align-items:baseline;gap:7px;background:rgba(255,255,255,.025)}\
 ' + P + 'el-tag{font-size:13px;font-weight:650;color:#93c5fd;font-family:"SF Mono",Monaco,Consolas,monospace}\
 ' + P + 'el-dim{font-size:11px;color:#64748b;font-family:"SF Mono",Monaco,Consolas,monospace}\
+' + P + 'block-box{padding:12px 14px;border-bottom:1px solid rgba(148,163,184,.12);background:rgba(37,99,235,.055)}\
+' + P + 'block-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:10px}\
+' + P + 'block-title{font-size:12px;font-weight:700;color:#e2e8f0}\
+' + P + 'block-path{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:#64748b;font-family:"SF Mono",Monaco,Consolas,monospace}\
+' + P + 'block-actions{display:grid;grid-template-columns:1fr 1fr;gap:6px}\
+' + P + 'block-btn{height:30px;padding:0 8px;border-radius:7px;border:1px solid rgba(148,163,184,.16);background:rgba(255,255,255,.045);color:#cbd5e1;cursor:pointer;font-size:12px;font-family:inherit;line-height:28px;transition:all .15s ' + EASE + '}\
+' + P + 'block-btn:hover{background:rgba(255,255,255,.09);border-color:rgba(148,163,184,.3);color:#fff}\
+' + P + 'block-btn:disabled{opacity:.4;cursor:default;transform:none!important}\
+' + P + 'content-box{padding:12px 14px;border-bottom:1px solid rgba(148,163,184,.12);background:rgba(15,23,42,.18)}\
+' + P + 'content-grid{display:grid;gap:10px}\
+' + P + 'content-label{font-size:11px;color:#94a3b8;margin-bottom:6px}\
+' + P + 'content-input{width:100%;height:30px;padding:0 9px;background:rgba(15,23,42,.72);border:1px solid rgba(148,163,184,.18);border-radius:7px;color:#e2e8f0;font-size:12px;font-family:"SF Mono",Monaco,Consolas,monospace;outline:none}\
+' + P + 'content-input:focus{border-color:#60a5fa;box-shadow:0 0 0 2px rgba(96,165,250,.18)}\
+' + P + 'tree-box{padding:12px 14px;border-bottom:1px solid rgba(148,163,184,.12);background:rgba(255,255,255,.025)}\
+' + P + 'tree-list{display:grid;gap:5px;max-height:190px;overflow:auto}\
+' + P + 'tree-item{height:28px;display:flex;align-items:center;gap:7px;padding:0 8px;border-radius:7px;border:1px solid transparent;background:transparent;color:#cbd5e1;cursor:pointer;font-size:12px;font-family:inherit;text-align:left}\
+' + P + 'tree-item:hover{background:rgba(255,255,255,.07);border-color:rgba(148,163,184,.18);color:#fff}\
+' + P + 'tree-item.active{background:rgba(37,99,235,.22);border-color:rgba(96,165,250,.4);color:#fff}\
+' + P + 'tree-tag{font-family:"SF Mono",Monaco,Consolas,monospace;color:#93c5fd}\
+' + P + 'tree-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#94a3b8}\
 @media (max-width:720px){\
 ' + P + 'toggle{right:16px;bottom:16px;width:46px;height:46px}\
 ' + P + 'toolbar{top:8px;left:8px;right:8px;max-width:none;justify-content:flex-start;max-height:120px;overflow:auto}\
@@ -390,6 +424,59 @@
     return el.id === PREFIX + '-root' || !!el.closest('#' + PREFIX + '-root') ||
            !!el.closest('.' + PREFIX + '-toggle') ||
            el.hasAttribute('data-ve-ui') || !!el.closest('[data-ve-ui]')
+  }
+
+  function cleanClassList(el, limit) {
+    if (!el || !el.className || typeof el.className !== 'string') return []
+    return el.className.split(/\s+/).filter(function (c) { return c && !hasPrefix(c, PREFIX) }).slice(0, limit || 2)
+  }
+
+  function shortElLabel(el) {
+    if (!el || !el.tagName) return ''
+    var label = el.tagName.toLowerCase()
+    if (el.id && !hasPrefix(el.id, PREFIX)) label += '#' + el.id
+    else {
+      var cls = cleanClassList(el, 1)
+      if (cls.length) label += '.' + cls[0]
+    }
+    return label
+  }
+
+  function blockName(el) {
+    if (!el || !el.tagName) return '区块'
+    var tag = el.tagName.toLowerCase()
+    var names = { header: 'Header', nav: 'Nav', main: 'Main', aside: 'Aside', footer: 'Footer', section: 'Section', article: 'Article' }
+    if (names[tag]) return names[tag]
+    var text = ((el.id || '') + ' ' + cleanClassList(el, 6).join(' ')).toLowerCase()
+    if (/header|topbar|navbar/.test(text)) return 'Header'
+    if (/\bnav\b|menu|sidebar|sider|left/.test(text)) return 'Nav'
+    if (/footer|copyright/.test(text)) return 'Footer'
+    if (/main|content|body|container|wrapper/.test(text)) return 'Main'
+    if (/hero|section|panel|card|module|block/.test(text)) return 'Section'
+    return tag === 'div' ? 'Block' : tag
+  }
+
+  function findBlock(target) {
+    var cur = target
+    while (cur && cur !== document.body && cur !== document.documentElement) {
+      if (isSemanticBlock(cur)) return cur
+      cur = cur.parentElement
+    }
+    return null
+  }
+
+  function isSemanticBlock(el) {
+    if (!el || !el.tagName || isVE(el)) return false
+    var tag = el.tagName.toLowerCase()
+    if (['header', 'nav', 'main', 'aside', 'footer', 'section', 'article'].indexOf(tag) !== -1) return true
+    var text = ((el.id || '') + ' ' + cleanClassList(el, 8).join(' ')).toLowerCase()
+    return tag === 'div' && /\b(header|topbar|navbar|nav|menu|sidebar|sider|left|main|content|body|container|wrapper|footer|copyright|hero|section|panel|card|module|block)\b/.test(text)
+  }
+
+  function movableSibling(node, dir) {
+    var cur = dir < 0 ? node.previousElementSibling : node.nextElementSibling
+    while (cur && isVE(cur)) cur = dir < 0 ? cur.previousElementSibling : cur.nextElementSibling
+    return cur
   }
 
   function elPath(el) {
@@ -490,6 +577,10 @@
     copyBtn.addEventListener('click', copyHTML)
     var dlBtn = el('button', PREFIX + '-tb-btn primary', { text: t('保存到本地'), 'data-ve-action': 'download-html' })
     dlBtn.addEventListener('click', downloadHTML)
+    var pngBtn = el('button', PREFIX + '-tb-btn', { text: t('导出 PNG'), title: t('导出 PNG'), 'data-ve-action': 'export-png' })
+    pngBtn.addEventListener('click', exportCurrentPNG)
+    var allPngBtn = el('button', PREFIX + '-tb-btn', { text: t('全部 PNG'), title: t('全部 PNG'), 'data-ve-action': 'export-all-png' })
+    allPngBtn.addEventListener('click', exportAllPNGs)
     dom.layoutBtn = el('button', PREFIX + '-tb-btn', { text: t('版式'), title: t('显示/隐藏样式面板'), 'data-ve-action': 'toggle-layout' })
     dom.layoutBtn.addEventListener('click', toggleLayoutPanel)
     dom.textBtn = el('button', PREFIX + '-tb-btn', { text: t('编辑文字'), title: t('点击页面文字直接编辑 (Alt+T)'), 'data-ve-action': 'edit-text' })
@@ -519,6 +610,8 @@
     dom.toolbar.appendChild(reloadBtn)
     dom.toolbar.appendChild(copyBtn)
     dom.toolbar.appendChild(dlBtn)
+    dom.toolbar.appendChild(pngBtn)
+    dom.toolbar.appendChild(allPngBtn)
     updateToolbarState()
 
     dom.panel = el('div', PREFIX + '-panel')
@@ -555,6 +648,7 @@
       if (!state.selected) {
         title.appendChild(el('span', PREFIX + '-panel-subtitle', { text: t('未选择') }))
         dom.panelInner.appendChild(title)
+        dom.panelInner.appendChild(renderStructureTree())
         dom.panelInner.appendChild(el('div', PREFIX + '-panel-empty', { text: t('进入编辑模式后，点击页面里的标题、段落、卡片或按钮开始调整。') }))
         dom.panelInner.classList.remove('fade')
         return
@@ -567,8 +661,12 @@
       var rect = target.getBoundingClientRect()
       info.appendChild(el('span', PREFIX + '-el-dim', { text: Math.round(rect.width) + ' × ' + Math.round(rect.height) }))
       dom.panelInner.appendChild(info)
+      dom.panelInner.appendChild(renderStructureTree())
+      dom.panelInner.appendChild(renderBlockTools(target))
       var link = closestAnchor(target)
       if (link) dom.panelInner.appendChild(renderLinkSection(link))
+      var contentTools = renderContentTools(target)
+      if (contentTools) dom.panelInner.appendChild(contentTools)
 
       GROUPS.forEach(function (g) {
         var section = el('div', PREFIX + '-group' + (g.collapsed ? ' collapsed' : ''))
@@ -597,7 +695,8 @@
     section.appendChild(header)
     var body = el('div', PREFIX + '-group-bd')
     body.appendChild(renderAttributeInput(link, 'href', t('跳转地址'), 'https://example.com 或 #section'))
-    body.appendChild(renderAttributeInput(link, 'target', t('打开方式'), '_blank / _self'))
+    body.appendChild(renderTargetSelect(link))
+    body.appendChild(renderContentInput(t('链接文字'), link.textContent || '', function (value) { applyTextContent(link, value) }))
     section.appendChild(body)
     return section
   }
@@ -613,6 +712,157 @@
       applyAttribute(target, attr, input.value.trim())
     })
     wrap.appendChild(input)
+    return wrap
+  }
+
+  function renderStructureTree() {
+    var box = el('div', PREFIX + '-tree-box')
+    var head = el('div', PREFIX + '-block-head')
+    head.appendChild(el('div', PREFIX + '-block-title', { text: t('页面结构') }))
+    head.appendChild(el('div', PREFIX + '-block-path', { text: t('区块 / 链接 / 按钮 / 图片') }))
+    box.appendChild(head)
+    var list = el('div', PREFIX + '-tree-list')
+    var nodes = collectStructureNodes()
+    if (!nodes.length) list.appendChild(el('div', PREFIX + '-panel-empty', { text: t('进入编辑模式后，点击页面里的标题、段落、卡片或按钮开始调整。') }))
+    nodes.forEach(function (node) {
+      var item = el('button', PREFIX + '-tree-item' + (node === state.selected ? ' active' : ''), { type: 'button' })
+      item.style.paddingLeft = (8 + Math.min(structureDepth(node), 5) * 12) + 'px'
+      item.appendChild(el('span', PREFIX + '-tree-tag', { text: shortElLabel(node) }))
+      item.appendChild(el('span', PREFIX + '-tree-text', { text: structureNodeText(node) }))
+      item.addEventListener('click', function () {
+        selectElement(node)
+        showToast(t('已从结构树选中 ') + shortElLabel(node))
+      })
+      list.appendChild(item)
+    })
+    box.appendChild(list)
+    return box
+  }
+
+  function collectStructureNodes() {
+    var selector = 'header,nav,main,section,article,aside,footer,a,button,img'
+    return Array.prototype.filter.call(document.querySelectorAll(selector), function (node) {
+      return !isVE(node) && node !== document.body && isElementVisibleEnough(node)
+    }).slice(0, 80)
+  }
+
+  function isElementVisibleEnough(node) {
+    var style = getComputedStyle(node)
+    if (style.display === 'none' || style.visibility === 'hidden') return false
+    var rect = node.getBoundingClientRect()
+    if (node.tagName && node.tagName.toLowerCase() === 'img') return rect.width > 0 && rect.height > 0
+    return rect.width > 0 && rect.height > 0 && ((node.textContent || '').trim() || node.children.length)
+  }
+
+  function structureDepth(node) {
+    var depth = 0
+    var cur = node.parentElement
+    while (cur && cur !== document.body && cur !== document.documentElement) {
+      if (/^(header|nav|main|section|article|aside|footer|a|button)$/i.test(cur.tagName || '')) depth++
+      cur = cur.parentElement
+    }
+    return depth
+  }
+
+  function structureNodeText(node) {
+    if (!node || !node.tagName) return ''
+    var tag = node.tagName.toLowerCase()
+    if (tag === 'img') return node.getAttribute('alt') || node.getAttribute('src') || ''
+    return ((node.textContent || '').replace(/\s+/g, ' ').trim()).slice(0, 42)
+  }
+
+  function renderBlockTools(target) {
+    var block = findBlock(target)
+    var box = el('div', PREFIX + '-block-box')
+    var head = el('div', PREFIX + '-block-head')
+    head.appendChild(el('div', PREFIX + '-block-title', { text: block ? t('当前区块：') + blockName(block) : t('当前区块：未识别') }))
+    head.appendChild(el('div', PREFIX + '-block-path', { text: block ? shortElLabel(block) : 'header/nav/main/section/footer' }))
+    box.appendChild(head)
+    var actions = el('div', PREFIX + '-block-actions')
+    var selectBtn = el('button', PREFIX + '-block-btn', { text: t('选中区块'), type: 'button' })
+    var copyBtn = el('button', PREFIX + '-block-btn', { text: t('复制区块'), type: 'button' })
+    var upBtn = el('button', PREFIX + '-block-btn', { text: t('上移区块'), type: 'button' })
+    var downBtn = el('button', PREFIX + '-block-btn', { text: t('下移区块'), type: 'button' })
+    var delBtn = el('button', PREFIX + '-block-btn', { text: t('删除区块'), type: 'button' })
+    selectBtn.disabled = copyBtn.disabled = upBtn.disabled = downBtn.disabled = delBtn.disabled = !block
+    if (block) {
+      upBtn.disabled = !movableSibling(block, -1)
+      downBtn.disabled = !movableSibling(block, 1)
+      selectBtn.addEventListener('click', function () { selectElement(block); showToast(t('已选中整个区块')) })
+      copyBtn.addEventListener('click', function () { copyBlockHTML(block) })
+      upBtn.addEventListener('click', function () { moveBlock(block, -1) })
+      downBtn.addEventListener('click', function () { moveBlock(block, 1) })
+      delBtn.addEventListener('click', function () { deleteBlock(block) })
+    }
+    actions.appendChild(selectBtn); actions.appendChild(copyBtn); actions.appendChild(upBtn); actions.appendChild(downBtn); actions.appendChild(delBtn)
+    box.appendChild(actions)
+    return box
+  }
+
+  function renderContentTools(target) {
+    var editable = findContentTarget(target)
+    if (!editable) return null
+    var tag = editable.tagName.toLowerCase()
+    var box = el('div', PREFIX + '-content-box')
+    var head = el('div', PREFIX + '-block-head')
+    head.appendChild(el('div', PREFIX + '-block-title', { text: t('内容属性：') + tag }))
+    head.appendChild(el('div', PREFIX + '-block-path', { text: shortElLabel(editable) }))
+    box.appendChild(head)
+    var grid = el('div', PREFIX + '-content-grid')
+    if (tag === 'button') {
+      grid.appendChild(renderContentInput(t('按钮文字'), editable.textContent || '', function (value) { applyTextContent(editable, value) }))
+    } else if (tag === 'img') {
+      grid.appendChild(renderContentInput(t('图片地址 src'), editable.getAttribute('src') || '', function (value) { applyAttribute(editable, 'src', value); updateSelOverlay() }))
+      grid.appendChild(renderContentInput(t('图片 alt'), editable.getAttribute('alt') || '', function (value) { applyAttribute(editable, 'alt', value) }))
+    }
+    box.appendChild(grid)
+    return box
+  }
+
+  function findContentTarget(target) {
+    if (!target || isVE(target)) return null
+    if (target.tagName && /^(button|img)$/i.test(target.tagName)) return target
+    if (target.closest) return target.closest('button,img')
+    return null
+  }
+
+  function renderContentInput(label, value, onChange) {
+    var wrap = el('div', null)
+    wrap.appendChild(el('div', PREFIX + '-content-label', { text: label }))
+    var input = el('input', PREFIX + '-content-input')
+    input.type = 'text'
+    input.value = value
+    input.addEventListener('change', function () { onChange(input.value.trim()) })
+    wrap.appendChild(input)
+    return wrap
+  }
+
+  function renderTargetSelect(anchor) {
+    var wrap = el('div', PREFIX + '-ctrl')
+    wrap.appendChild(el('div', PREFIX + '-ctrl-label', { text: t('打开方式') }))
+    var sel = el('select', PREFIX + '-select')
+    var current = anchor.getAttribute('target') === '_blank' ? '_blank' : '_self'
+    ;[
+      { value: '_self', label: t('当前窗口打开') },
+      { value: '_blank', label: t('新窗口打开') }
+    ].forEach(function (opt) {
+      var item = el('option', null, { text: opt.label })
+      item.value = opt.value
+      if (opt.value === current) item.selected = true
+      sel.appendChild(item)
+    })
+    sel.addEventListener('change', function () {
+      pushHistory('attribute')
+      if (sel.value === '_blank') {
+        anchor.setAttribute('target', '_blank')
+        anchor.setAttribute('rel', 'noopener noreferrer')
+      } else {
+        anchor.removeAttribute('target')
+        if (anchor.getAttribute('rel') === 'noopener noreferrer') anchor.removeAttribute('rel')
+      }
+      showToast(t('打开方式已更新'))
+    })
+    wrap.appendChild(sel)
     return wrap
   }
 
@@ -836,6 +1086,52 @@
     if (value !== '') target.setAttribute(attr, value)
     else target.removeAttribute(attr)
     updateSelOverlay()
+    showToast(t('属性已更新'))
+  }
+
+  function applyTextContent(target, value) {
+    if (!target || isVE(target)) return
+    pushHistory('content')
+    target.textContent = value
+    updateSelOverlay()
+    showToast(t('文字已更新'))
+  }
+
+  function copyBlockHTML(block) {
+    if (!block) return
+    finishTextEdit()
+    var clone = block.cloneNode(true)
+    cleanEditorArtifacts(clone)
+    var html = clone.outerHTML
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(html).then(
+        function () { showToast(t('已复制区块 HTML')) },
+        function () { fallbackCopy(html) }
+      )
+    } else { fallbackCopy(html) }
+  }
+
+  function moveBlock(block, dir) {
+    var sibling = movableSibling(block, dir)
+    if (!block || !sibling || !block.parentNode) return
+    pushHistory('block-move')
+    if (dir < 0) block.parentNode.insertBefore(block, sibling)
+    else block.parentNode.insertBefore(sibling, block)
+    refreshPages()
+    selectElement(block)
+    updatePagerState()
+    showToast(dir < 0 ? t('区块已上移') : t('区块已下移'))
+  }
+
+  function deleteBlock(block) {
+    if (!block || !block.parentNode) return
+    if (!window.confirm(t('删除当前区块？可用撤销恢复。'))) return
+    pushHistory('block-delete')
+    removeNode(block)
+    refreshPages()
+    deselectElement()
+    updatePagerState()
+    showToast(t('区块已删除'))
   }
 
   function pushHistory(reason) {
@@ -1615,9 +1911,13 @@
     finishTextEdit()
     var html = exportHTML()
     var blob = new Blob([html], { type: 'text/html;charset=utf-8' })
+    downloadBlob(blob, 'page-' + Date.now() + '.html', t('已保存到本地'))
+  }
+
+  function downloadBlob(blob, filename, successText) {
     if (navigator.msSaveOrOpenBlob) {
-      navigator.msSaveOrOpenBlob(blob, 'page-' + Date.now() + '.html')
-      showToast(t('已保存到本地'))
+      navigator.msSaveOrOpenBlob(blob, filename)
+      showToast(successText || t('已保存到本地'))
       return
     }
     if (!window.URL || !URL.createObjectURL) {
@@ -1626,7 +1926,7 @@
     }
     var url = URL.createObjectURL(blob)
     var a = document.createElement('a'); a.href = url
-    a.download = 'page-' + Date.now() + '.html'
+    a.download = filename
     a.setAttribute('data-ve-ui', '1')
     a.style.cssText = 'position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0'
     document.body.appendChild(a)
@@ -1643,7 +1943,138 @@
       removeNode(a)
       URL.revokeObjectURL(url)
     }, 1000)
-    showToast(t('已保存到本地'))
+    showToast(successText || t('已保存到本地'))
+  }
+
+  function exportCurrentPNG() {
+    captureViewportPNG('page-' + Date.now() + '.png').then(function () {
+      showToast(t('当前页 PNG 已导出'))
+    }, function () {
+      showToast(t('PNG 导出失败：请确认页面图片未被跨域限制'))
+    })
+  }
+
+  async function exportAllPNGs() {
+    refreshPages()
+    if (!hasUsablePager()) {
+      exportCurrentPNG()
+      return
+    }
+    var original = state.currentPage
+    var total = state.pages.length
+    showToast(t('开始导出 ') + total + t(' 页 PNG'))
+    try {
+      for (var i = 0; i < total; i++) {
+        goToPageIndex(i)
+        await wait(450)
+        await captureViewportPNG('page-' + padNumber(i + 1, 2) + '.png')
+        await wait(120)
+      }
+      showToast(t('全部 PNG 已导出'))
+    } catch (e) {
+      showToast(t('PNG 导出失败：请确认页面图片未被跨域限制'))
+    }
+    goToPageIndex(original)
+  }
+
+  function captureViewportPNG(filename) {
+    finishTextEdit()
+    hideOv(dom.hoverOv)
+    hideOv(dom.selOv)
+    return loadHtml2Canvas().then(function () {
+      var hidden = hideEditorForCapture()
+      return window.html2canvas(document.body, {
+        backgroundColor: '#ffffff',
+        useCORS: true,
+        allowTaint: false,
+        logging: false,
+        x: window.pageXOffset || document.documentElement.scrollLeft || 0,
+        y: window.pageYOffset || document.documentElement.scrollTop || 0,
+        width: window.innerWidth,
+        height: window.innerHeight,
+        windowWidth: window.innerWidth,
+        windowHeight: window.innerHeight,
+        scrollX: -(window.pageXOffset || document.documentElement.scrollLeft || 0),
+        scrollY: -(window.pageYOffset || document.documentElement.scrollTop || 0)
+      }).then(function (canvas) {
+        restoreEditorAfterCapture(hidden)
+        return new Promise(function (resolve, reject) {
+          canvas.toBlob(function (blob) {
+            if (!blob) { reject(new Error('empty png')); return }
+            downloadBlob(blob, filename, t('PNG 已导出'))
+            resolve()
+          }, 'image/png')
+        })
+      }, function (err) {
+        restoreEditorAfterCapture(hidden)
+        throw err
+      })
+    })
+  }
+
+  function loadHtml2Canvas() {
+    if (window.html2canvas) return Promise.resolve()
+    if (dom.html2canvasLoading) return dom.html2canvasLoading
+    dom.html2canvasLoading = new Promise(function (resolve, reject) {
+      var script = document.createElement('script')
+      script.src = new URL('vendor/html2canvas.min.js', getEditorSrc()).href
+      script.setAttribute('data-ve', '1')
+      script.onload = function () { window.html2canvas ? resolve() : reject(new Error('html2canvas missing')) }
+      script.onerror = function () { reject(new Error('html2canvas load failed')) }
+      document.head.appendChild(script)
+    })
+    return dom.html2canvasLoading
+  }
+
+  function hideEditorForCapture() {
+    var nodes = [dom.root, dom.toggle, dom.hoverOv, dom.selOv]
+    return nodes.map(function (node) {
+      if (!node) return null
+      var prev = node.style.visibility
+      node.style.visibility = 'hidden'
+      return { node: node, visibility: prev }
+    })
+  }
+
+  function restoreEditorAfterCapture(items) {
+    ;(items || []).forEach(function (item) {
+      if (item && item.node) item.node.style.visibility = item.visibility
+    })
+  }
+
+  function wait(ms) {
+    return new Promise(function (resolve) { setTimeout(resolve, ms) })
+  }
+
+  function padNumber(num, size) {
+    var text = String(num)
+    while (text.length < size) text = '0' + text
+    return text
+  }
+
+  function goToPageIndex(index) {
+    refreshPages()
+    if (!state.pages.length) return
+    index = Math.max(0, Math.min(state.pages.length - 1, index))
+    var previous = state.currentPage
+    var page = state.pages[index]
+    deselectElement()
+    if (state.pageMode === 'runtime') {
+      var delta = index - previous
+      var step = delta > 0 ? 1 : -1
+      for (var i = 0; i < Math.abs(delta); i++) activateRuntimePage(step)
+    } else if (state.pageMode === 'slide' && page.node) {
+      activateStackedPage(index)
+    } else if (page.node) {
+      page.node.scrollIntoView({ behavior: 'auto', block: 'start', inline: 'start' })
+    } else if (page.scroller) {
+      page.scroller.scrollTo({ left: page.x, top: page.y || 0, behavior: 'auto' })
+    } else {
+      window.scrollTo({ left: page.x, top: page.y || 0, behavior: 'auto' })
+    }
+    state.currentPage = index
+    updatePagerState()
+    onScrollResize()
   }
 
   // ========== Keyboard ==========

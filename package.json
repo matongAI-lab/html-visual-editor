@@ -12,5 +12,8 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.44.0"
+  },
+  "dependencies": {
+    "html2canvas": "^1.4.1"
   }
 }
