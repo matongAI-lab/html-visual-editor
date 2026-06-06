@@ -58,25 +58,27 @@
     '灰度': 'Grayscale', '背景模糊': 'Backdrop Blur',
     '旋转': 'Rotate', '缩放': 'Scale', '水平位移': 'Move X', '垂直位移': 'Move Y',
     '链接': 'Link', '跳转地址': 'URL', '打开方式': 'Target',
-    '导出整页 PNG': 'Full PNG', '按页导出 PNG': 'Page PNGs',
-    '页面结构': 'Structure', '区块 / 链接 / 按钮 / 图片': 'Blocks / Links / Buttons / Images',
+    '页面结构': 'Structure', '结构位置': 'Position', '区块 / 标题 / 文本 / 链接 / 图片': 'Blocks / Headings / Text / Links / Images',
+    '上一项': 'Prev', '当前': 'Current', '下一项': 'Next',
+    '点击页面元素后显示结构位置': 'Click an element to show its position',
+    '没有上一项': 'No previous item', '没有下一项': 'No next item',
     '当前区块：': 'Block: ', '当前区块：未识别': 'Block: None',
     '选中区块': 'Select', '复制区块': 'Copy', '上移区块': 'Move Up', '下移区块': 'Move Down', '删除区块': 'Delete',
-    '内容属性：': 'Content: ', '链接文字': 'Link Text', '按钮文字': 'Button Text', '图片地址 src': 'Image URL', '图片 alt': 'Image Alt',
+    '内容属性：': 'Content: ', '文字内容': 'Text Content', '直接编辑文字': 'Edit Text Directly', '链接文字': 'Link Text', '按钮文字': 'Button Text', '图片地址 src': 'Image URL', '图片 alt': 'Image Alt',
     '当前窗口打开': 'Same Tab', '新窗口打开': 'New Tab',
     '样式面板': 'Style Panel', '未选择': 'None',
     '进入编辑模式后，点击页面里的标题、段落、卡片或按钮开始调整。': 'Enter edit mode, then click any element to start.',
-    '版式': 'Styles', '编辑文字': 'Edit Text', '撤销': 'Undo', '复原': 'Redo',
+    '编辑版式': 'Edit Layout', '编辑文字': 'Edit Text', '撤销': 'Undo', '复原': 'Redo',
     '上一页': 'Prev', '下一页': 'Next', '重新载入': 'Reload',
     '复制 HTML': 'Copy HTML', '保存 HTML': 'Save HTML',
     '切换编辑模式 (Alt+E)': 'Toggle edit mode (Alt+E)',
     '退出编辑模式 (Alt+E)': 'Exit edit mode (Alt+E)',
-    '退出编辑': 'Exit', '显示/隐藏样式面板': 'Toggle style panel',
+    '退出编辑': 'Exit', '打开/关闭版式编辑': 'Toggle layout editor',
     '点击页面文字直接编辑 (Alt+T)': 'Click text to edit (Alt+T)',
     '撤销上一步 (Alt+Z)': 'Undo (Alt+Z)', '复原刚刚撤销的操作 (Alt+Y)': 'Redo (Alt+Y)',
     '切换到上一页 (Alt+←)': 'Previous page (Alt+←)', '切换到下一页 (Alt+→)': 'Next page (Alt+→)',
     '重新载入当前文件/入口页': 'Reload current file',
-    '点击选中元素 · 按住 Ctrl 点击可触发页面原有功能': 'Click to select · Ctrl+click for page behavior',
+    '点击选中元素 · 双击文字直接编辑 · Ctrl 点击触发原页面': 'Click to select · double-click text to edit · Ctrl+click for page behavior',
     '没有可撤销的操作': 'Nothing to undo', '没有可复原的操作': 'Nothing to redo',
     '已复制到剪贴板': 'Copied to clipboard',
     '复制失败，请手动选择导出的 HTML': 'Copy failed',
@@ -90,9 +92,6 @@
     '区块已上移': 'Block moved up', '区块已下移': 'Block moved down',
     '删除当前区块？可用撤销恢复。': 'Delete this block? Undo can restore it.',
     '区块已删除': 'Block deleted',
-    'PNG 已导出': 'PNG exported', '整页 PNG 已导出': 'Full PNG exported',
-    'PNG 导出失败：请确认页面图片未被跨域限制': 'PNG export failed. Check cross-origin images.',
-    '开始导出 ': 'Exporting ', ' 页 PNG': ' PNG pages', '全部 PNG 已导出': 'All PNG exported',
     '文字编辑已开启': 'Text edit mode on', '文字编辑已关闭': 'Text edit mode off',
     '重新载入会放弃未复制/保存的修改，确定继续吗？': 'Reload will discard unsaved changes. Continue?'
   }
@@ -306,15 +305,18 @@
 ' + P + 'toggle:hover{transform:translateY(-2px);background:#1d4ed8;box-shadow:0 16px 36px rgba(37,99,235,.3)}\
 ' + P + 'toggle:active{transform:scale(0.92);transition-duration:.1s}\
 ' + P + 'toggle.active{display:none}\
-' + P + 'toolbar{position:fixed;top:16px;right:16px;width:auto;max-width:calc(100vw - 32px);min-height:42px;background:rgba(15,23,42,.96);border:1px solid rgba(148,163,184,.22);border-radius:10px;display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;padding:6px;gap:6px;pointer-events:auto;opacity:0;transform:translateY(-16px);transition:opacity .3s ' + EASE + ',transform .35s ' + EASE_OUT + ';z-index:' + (Z + 5) + ';box-shadow:0 18px 45px rgba(2,6,23,.28);-webkit-backdrop-filter:blur(16px) saturate(1.15);backdrop-filter:blur(16px) saturate(1.15)}\
+' + P + 'toolbar{position:fixed;top:12px;left:16px;right:16px;width:auto;min-height:46px;background:rgba(15,23,42,.94);border:1px solid rgba(148,163,184,.22);border-radius:10px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;padding:7px;gap:8px;pointer-events:auto;opacity:0;transform:translateY(-16px);transition:opacity .3s ' + EASE + ',transform .35s ' + EASE_OUT + ';z-index:' + (Z + 5) + ';box-shadow:0 18px 45px rgba(2,6,23,.28);-webkit-backdrop-filter:blur(16px) saturate(1.15);backdrop-filter:blur(16px) saturate(1.15)}\
 ' + P + 'toolbar.visible{opacity:1;transform:translateY(0)}\
-' + P + 'tb-btn{height:30px;padding:0 11px;border-radius:7px;border:1px solid rgba(148,163,184,.18);background:rgba(255,255,255,.045);color:#cbd5e1;cursor:pointer;font-size:12px;white-space:nowrap;font-family:inherit;line-height:28px;transition:all .15s ' + EASE + '}\
+' + P + 'tb-group{display:flex;align-items:center;gap:6px;min-width:0}\
+' + P + 'tb-group.main{flex:1;justify-content:center;flex-wrap:wrap}\
+' + P + 'tb-group.export{padding:4px;border-radius:8px;background:rgba(37,99,235,.08);border:1px solid rgba(96,165,250,.14)}\
+' + P + 'tb-btn{height:32px;padding:0 12px;border-radius:7px;border:1px solid rgba(148,163,184,.18);background:rgba(255,255,255,.045);color:#cbd5e1;cursor:pointer;font-size:12px;white-space:nowrap;font-family:inherit;line-height:30px;transition:all .15s ' + EASE + '}\
 ' + P + 'tb-btn:hover{background:rgba(255,255,255,.09);border-color:rgba(148,163,184,.3);color:#f8fafc}\
 ' + P + 'tb-btn:active{transform:scale(0.95);transition-duration:.08s}\
 ' + P + 'tb-btn.primary{background:#2563eb;border-color:#3b82f6;color:#fff}\
 ' + P + 'tb-btn.primary:hover{background:#1d4ed8;box-shadow:0 8px 18px rgba(37,99,235,.28)}\
 ' + P + 'tb-btn.primary:active{background:#1e40af}\
-' + P + 'tb-btn:disabled{opacity:.45;cursor:default;transform:none!important;box-shadow:none!important}\
+' + P + 'tb-btn:disabled{opacity:.32;cursor:default;transform:none!important;box-shadow:none!important}\
 ' + P + 'tb-btn.exit{background:transparent;border:none;color:#94a3b8;padding:0 8px;font-size:16px;transition:color .15s ' + EASE + ',transform .15s ' + EASE + '}\
 ' + P + 'tb-btn.exit:hover{color:#fff;transform:scale(1.15)}\
 ' + P + 'tb-btn.exit:active{transform:scale(0.9);transition-duration:.08s}\
@@ -398,15 +400,21 @@
 ' + P + 'content-input{width:100%;height:30px;padding:0 9px;background:rgba(15,23,42,.72);border:1px solid rgba(148,163,184,.18);border-radius:7px;color:#e2e8f0;font-size:12px;font-family:"SF Mono",Monaco,Consolas,monospace;outline:none}\
 ' + P + 'content-input:focus{border-color:#60a5fa;box-shadow:0 0 0 2px rgba(96,165,250,.18)}\
 ' + P + 'tree-box{padding:12px 14px;border-bottom:1px solid rgba(148,163,184,.12);background:rgba(255,255,255,.025)}\
-' + P + 'tree-list{display:grid;gap:5px;max-height:190px;overflow:auto}\
+' + P + 'tree-list{display:grid;gap:5px}\
 ' + P + 'tree-item{height:28px;display:flex;align-items:center;gap:7px;padding:0 8px;border-radius:7px;border:1px solid transparent;background:transparent;color:#cbd5e1;cursor:pointer;font-size:12px;font-family:inherit;text-align:left}\
 ' + P + 'tree-item:hover{background:rgba(255,255,255,.07);border-color:rgba(148,163,184,.18);color:#fff}\
 ' + P + 'tree-item.active{background:rgba(37,99,235,.22);border-color:rgba(96,165,250,.4);color:#fff}\
+' + P + 'tree-item.muted{cursor:default;color:#64748b}\
+' + P + 'tree-item.muted:hover{background:transparent;border-color:transparent;color:#64748b}\
+' + P + 'tree-role{width:42px;flex:0 0 auto;color:#64748b;font-size:11px}\
 ' + P + 'tree-tag{font-family:"SF Mono",Monaco,Consolas,monospace;color:#93c5fd}\
+' + P + 'tree-item.muted ' + P + 'tree-tag{color:#64748b}\
 ' + P + 'tree-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#94a3b8}\
 @media (max-width:720px){\
 ' + P + 'toggle{right:16px;bottom:16px;width:46px;height:46px}\
-' + P + 'toolbar{top:8px;left:8px;right:8px;max-width:none;justify-content:flex-start;max-height:120px;overflow:auto}\
+' + P + 'toolbar{top:8px;left:8px;right:8px;justify-content:flex-start;max-height:144px;overflow:auto}\
+' + P + 'tb-group.main{order:3;flex-basis:100%;justify-content:flex-start}\
+' + P + 'tb-group.export{order:2;flex:1;justify-content:flex-end}\
 ' + P + 'tb-btn{height:32px;line-height:30px;padding:0 10px}\
 ' + P + 'pager{margin-left:0;padding-left:4px;padding-right:4px;border-left:none}\
 ' + P + 'panel{top:auto;left:8px;right:8px;width:auto;height:42vh;max-height:360px;bottom:8px;border-radius:12px}\
@@ -577,11 +585,7 @@
     copyBtn.addEventListener('click', copyHTML)
     var dlBtn = el('button', PREFIX + '-tb-btn primary', { text: t('保存 HTML'), title: t('保存 HTML'), 'data-ve-action': 'download-html' })
     dlBtn.addEventListener('click', downloadHTML)
-    var pngBtn = el('button', PREFIX + '-tb-btn', { text: t('导出整页 PNG'), title: t('导出整页 PNG'), 'data-ve-action': 'export-png' })
-    pngBtn.addEventListener('click', exportCurrentPNG)
-    var allPngBtn = el('button', PREFIX + '-tb-btn', { text: t('按页导出 PNG'), title: t('按页导出 PNG'), 'data-ve-action': 'export-all-png' })
-    allPngBtn.addEventListener('click', exportAllPNGs)
-    dom.layoutBtn = el('button', PREFIX + '-tb-btn', { text: t('版式'), title: t('显示/隐藏样式面板'), 'data-ve-action': 'toggle-layout' })
+    dom.layoutBtn = el('button', PREFIX + '-tb-btn', { text: t('编辑版式'), title: t('打开/关闭版式编辑'), 'data-ve-action': 'toggle-layout' })
     dom.layoutBtn.addEventListener('click', toggleLayoutPanel)
     dom.textBtn = el('button', PREFIX + '-tb-btn', { text: t('编辑文字'), title: t('点击页面文字直接编辑 (Alt+T)'), 'data-ve-action': 'edit-text' })
     dom.textBtn.addEventListener('click', toggleTextEdit)
@@ -600,18 +604,22 @@
     dom.pager.appendChild(dom.nextPageBtn)
     var reloadBtn = el('button', PREFIX + '-tb-btn', { text: t('重新载入'), title: t('重新载入当前文件/入口页'), 'data-ve-action': 'reload' })
     reloadBtn.addEventListener('click', reloadPage)
-    dom.toolbar.appendChild(exitBtn)
-    dom.toolbar.appendChild(dom.breadcrumb)
-    dom.toolbar.appendChild(dom.layoutBtn)
-    dom.toolbar.appendChild(dom.textBtn)
-    dom.toolbar.appendChild(dom.undoBtn)
-    dom.toolbar.appendChild(dom.redoBtn)
-    dom.toolbar.appendChild(dom.pager)
-    dom.toolbar.appendChild(reloadBtn)
-    dom.toolbar.appendChild(copyBtn)
-    dom.toolbar.appendChild(dlBtn)
-    dom.toolbar.appendChild(pngBtn)
-    dom.toolbar.appendChild(allPngBtn)
+    var leftGroup = el('div', PREFIX + '-tb-group')
+    var mainGroup = el('div', PREFIX + '-tb-group main')
+    var exportGroup = el('div', PREFIX + '-tb-group export')
+    leftGroup.appendChild(exitBtn)
+    leftGroup.appendChild(dom.breadcrumb)
+    mainGroup.appendChild(dom.layoutBtn)
+    mainGroup.appendChild(dom.textBtn)
+    mainGroup.appendChild(dom.undoBtn)
+    mainGroup.appendChild(dom.redoBtn)
+    mainGroup.appendChild(dom.pager)
+    mainGroup.appendChild(reloadBtn)
+    exportGroup.appendChild(copyBtn)
+    exportGroup.appendChild(dlBtn)
+    dom.toolbar.appendChild(leftGroup)
+    dom.toolbar.appendChild(mainGroup)
+    dom.toolbar.appendChild(exportGroup)
     updateToolbarState()
 
     dom.panel = el('div', PREFIX + '-panel')
@@ -649,7 +657,6 @@
         title.appendChild(el('span', PREFIX + '-panel-subtitle', { text: t('未选择') }))
         dom.panelInner.appendChild(title)
         dom.panelInner.appendChild(renderStructureTree())
-        dom.panelInner.appendChild(el('div', PREFIX + '-panel-empty', { text: t('进入编辑模式后，点击页面里的标题、段落、卡片或按钮开始调整。') }))
         dom.panelInner.classList.remove('fade')
         return
       }
@@ -719,31 +726,88 @@
     var box = el('div', PREFIX + '-tree-box')
     var head = el('div', PREFIX + '-block-head')
     head.appendChild(el('div', PREFIX + '-block-title', { text: t('页面结构') }))
-    head.appendChild(el('div', PREFIX + '-block-path', { text: t('区块 / 链接 / 按钮 / 图片') }))
+    head.appendChild(el('div', PREFIX + '-block-path', { text: t('结构位置') }))
     box.appendChild(head)
     var list = el('div', PREFIX + '-tree-list')
     var nodes = collectStructureNodes()
-    if (!nodes.length) list.appendChild(el('div', PREFIX + '-panel-empty', { text: t('进入编辑模式后，点击页面里的标题、段落、卡片或按钮开始调整。') }))
-    nodes.forEach(function (node) {
-      var item = el('button', PREFIX + '-tree-item' + (node === state.selected ? ' active' : ''), { type: 'button' })
-      item.style.paddingLeft = (8 + Math.min(structureDepth(node), 5) * 12) + 'px'
-      item.appendChild(el('span', PREFIX + '-tree-tag', { text: shortElLabel(node) }))
-      item.appendChild(el('span', PREFIX + '-tree-text', { text: structureNodeText(node) }))
-      item.addEventListener('click', function () {
-        selectElement(node)
-        showToast(t('已从结构树选中 ') + shortElLabel(node))
-      })
-      list.appendChild(item)
-    })
+    var focus = findStructureFocus(nodes)
+    if (!focus) {
+      list.appendChild(renderStructurePlaceholder(t('当前'), t('点击页面元素后显示结构位置')))
+      box.appendChild(list)
+      return box
+    }
+    var prev = focus.index > 0 ? nodes[focus.index - 1] : null
+    var next = focus.index < nodes.length ? nodes[focus.index + (focus.inList ? 1 : 0)] : null
+    list.appendChild(prev ? renderStructureItem(prev, t('上一项'), false) : renderStructurePlaceholder(t('上一项'), t('没有上一项')))
+    list.appendChild(renderStructureItem(focus.node, t('当前'), true))
+    list.appendChild(next ? renderStructureItem(next, t('下一项'), false) : renderStructurePlaceholder(t('下一项'), t('没有下一项')))
     box.appendChild(list)
     return box
   }
 
+  function renderStructureItem(node, role, active) {
+    var item = el('button', PREFIX + '-tree-item' + (active ? ' active' : ''), { type: 'button' })
+    item.appendChild(el('span', PREFIX + '-tree-role', { text: role }))
+    item.appendChild(el('span', PREFIX + '-tree-tag', { text: shortElLabel(node) }))
+    item.appendChild(el('span', PREFIX + '-tree-text', { text: structureNodeText(node) }))
+    item.addEventListener('click', function () {
+      selectElement(node)
+      showToast(t('已从结构树选中 ') + shortElLabel(node))
+    })
+    return item
+  }
+
+  function renderStructurePlaceholder(role, text) {
+    var item = el('div', PREFIX + '-tree-item muted')
+    item.appendChild(el('span', PREFIX + '-tree-role', { text: role }))
+    item.appendChild(el('span', PREFIX + '-tree-tag', { text: '-' }))
+    item.appendChild(el('span', PREFIX + '-tree-text', { text: text }))
+    return item
+  }
+
   function collectStructureNodes() {
-    var selector = 'header,nav,main,section,article,aside,footer,a,button,img'
+    var selector = [
+      'header', 'nav', 'main', 'section', 'article', 'aside', 'footer',
+      'a', 'button', 'img',
+      'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+      'p', 'li', 'blockquote', 'figcaption', 'label',
+      'div', 'span'
+    ].join(',')
     return Array.prototype.filter.call(document.querySelectorAll(selector), function (node) {
-      return !isVE(node) && node !== document.body && isElementVisibleEnough(node)
-    }).slice(0, 80)
+      return shouldShowStructureNode(node)
+    }).slice(0, 240)
+  }
+
+  function findStructureFocus(nodes) {
+    var target = state.selected
+    if (!target || !target.tagName || isVE(target)) return null
+    var index = nodes.indexOf(target)
+    if (index !== -1) return { node: target, index: index, inList: true }
+    var cur = target.parentElement
+    while (cur && cur !== document.body && cur !== document.documentElement) {
+      index = nodes.indexOf(cur)
+      if (index !== -1) return { node: cur, index: index, inList: true }
+      cur = cur.parentElement
+    }
+    if (!isElementVisibleEnough(target)) return null
+    return { node: target, index: structureInsertionIndex(nodes, target), inList: false }
+  }
+
+  function structureInsertionIndex(nodes, target) {
+    for (var i = 0; i < nodes.length; i++) {
+      if (target.compareDocumentPosition(nodes[i]) & Node.DOCUMENT_POSITION_FOLLOWING) return i
+    }
+    return nodes.length
+  }
+
+  function shouldShowStructureNode(node) {
+    if (!node || !node.tagName || isVE(node) || node === document.body) return false
+    if (!isElementVisibleEnough(node)) return false
+    var tag = node.tagName.toLowerCase()
+    if (/^(header|nav|main|section|article|aside|footer|a|button|img)$/.test(tag)) return true
+    if (/^(h1|h2|h3|h4|h5|h6|p|li|blockquote|figcaption|label)$/.test(tag)) return hasStructureText(node)
+    if (/^(div|span)$/.test(tag)) return isLeafTextStructureNode(node)
+    return false
   }
 
   function isElementVisibleEnough(node) {
@@ -754,11 +818,21 @@
     return rect.width > 0 && rect.height > 0 && ((node.textContent || '').trim() || node.children.length)
   }
 
+  function hasStructureText(node) {
+    return !!((node.textContent || '').replace(/\s+/g, ' ').trim())
+  }
+
+  function isLeafTextStructureNode(node) {
+    if (!hasStructureText(node)) return false
+    if (node.children && node.children.length) return false
+    return true
+  }
+
   function structureDepth(node) {
     var depth = 0
     var cur = node.parentElement
     while (cur && cur !== document.body && cur !== document.documentElement) {
-      if (/^(header|nav|main|section|article|aside|footer|a|button)$/i.test(cur.tagName || '')) depth++
+      if (shouldShowStructureNode(cur)) depth++
       cur = cur.parentElement
     }
     return depth
@@ -768,7 +842,22 @@
     if (!node || !node.tagName) return ''
     var tag = node.tagName.toLowerCase()
     if (tag === 'img') return node.getAttribute('alt') || node.getAttribute('src') || ''
-    return ((node.textContent || '').replace(/\s+/g, ' ').trim()).slice(0, 42)
+    if (/^(a|button)$/.test(tag) || !node.children || !node.children.length) return normalizeStructureText(node.textContent)
+    var direct = ''
+    for (var i = 0; i < node.childNodes.length; i++) {
+      var child = node.childNodes[i]
+      if (child.nodeType === 3) direct += child.nodeValue || ''
+    }
+    direct = normalizeStructureText(direct)
+    if (direct) return direct
+    for (var j = 0; j < node.children.length; j++) {
+      if (!isVE(node.children[j]) && hasStructureText(node.children[j])) return normalizeStructureText(node.children[j].textContent)
+    }
+    return ''
+  }
+
+  function normalizeStructureText(text) {
+    return ((text || '').replace(/\s+/g, ' ').trim()).slice(0, 42)
   }
 
   function renderBlockTools(target) {
@@ -814,6 +903,10 @@
     } else if (tag === 'img') {
       grid.appendChild(renderContentInput(t('图片地址 src'), editable.getAttribute('src') || '', function (value) { applyAttribute(editable, 'src', value); updateSelOverlay() }))
       grid.appendChild(renderContentInput(t('图片 alt'), editable.getAttribute('alt') || '', function (value) { applyAttribute(editable, 'alt', value) }))
+    } else if (isPlainTextTarget(editable)) {
+      grid.appendChild(renderContentInput(t('文字内容'), editable.textContent || '', function (value) { applyTextContent(editable, value) }))
+    } else {
+      grid.appendChild(renderContentAction(t('直接编辑文字'), function () { startTextEdit(editable) }))
     }
     box.appendChild(grid)
     return box
@@ -822,8 +915,28 @@
   function findContentTarget(target) {
     if (!target || isVE(target)) return null
     if (target.tagName && /^(button|img)$/i.test(target.tagName)) return target
-    if (target.closest) return target.closest('button,img')
+    if (isTextContentTarget(target)) return target
+    if (isPlainTextTarget(target)) return target
+    if (target.closest) {
+      var nested = target.closest('button,img')
+      if (nested) return nested
+    }
     return null
+  }
+
+  function isPlainTextTarget(target) {
+    if (!target || !target.tagName || !isTextEditable(target)) return false
+    var tag = target.tagName.toLowerCase()
+    if (/^(a|button|img|input|textarea|select|option)$/.test(tag)) return false
+    if (target.children && target.children.length) return false
+    return !!((target.textContent || '').trim())
+  }
+
+  function isTextContentTarget(target) {
+    if (!target || !target.tagName || !isTextEditable(target)) return false
+    var tag = target.tagName.toLowerCase()
+    if (!/^(h1|h2|h3|h4|h5|h6|p|li|blockquote|figcaption|label|span|strong|em|small|div)$/.test(tag)) return false
+    return !!((target.textContent || '').replace(/\s+/g, ' ').trim())
   }
 
   function renderContentInput(label, value, onChange) {
@@ -834,6 +947,14 @@
     input.value = value
     input.addEventListener('change', function () { onChange(input.value.trim()) })
     wrap.appendChild(input)
+    return wrap
+  }
+
+  function renderContentAction(label, onClick) {
+    var wrap = el('div', null)
+    var btn = el('button', PREFIX + '-block-btn', { text: label, type: 'button' })
+    btn.addEventListener('click', onClick)
+    wrap.appendChild(btn)
     return wrap
   }
 
@@ -1458,6 +1579,26 @@
     return pages
   }
 
+  function hasActivePageState(node) {
+    if (!node || !node.classList) return false
+    return node.classList.contains('active') ||
+      node.classList.contains('current') ||
+      node.classList.contains('is-active')
+  }
+
+  function shouldPreferRuntimePages(runtimePages) {
+    var explicitNodes = collectExplicitPageNodes()
+    if (!explicitNodes.length) return true
+    if (runtimePages.length > explicitNodes.length) return true
+    return explicitNodes.some(hasActivePageState)
+  }
+
+  function detectActiveRuntimePages() {
+    var explicitNodes = collectExplicitPageNodes()
+    if (explicitNodes.length < 2 || !explicitNodes.some(hasActivePageState)) return []
+    return setPageMode('runtime', sortPages(explicitNodes.map(pagePos)))
+  }
+
   function sizeKey(item) {
     var w = Math.round(item.rect.width / 40) * 40
     var h = Math.round(item.rect.height / 40) * 40
@@ -1530,6 +1671,36 @@
     return { current: current, total: total }
   }
 
+  function readRuntimeCounterNode(node, allowGeneric) {
+    if (!node || isVE(node)) return null
+    var text = (node.textContent || '').trim()
+    if (!text || text.length > 40) return null
+    var parsed = parsePageCounterText(text)
+    if (!parsed) return null
+    var style = getComputedStyle(node)
+    if (style.display === 'none' || style.visibility === 'hidden') return null
+    var rect = node.getBoundingClientRect()
+    if (rect.width < 6 || rect.height < 6) return null
+    if (!allowGeneric) return { node: node, parsed: parsed }
+
+    var idClass = ((node.id || '') + ' ' + (typeof node.className === 'string' ? node.className : '')).toLowerCase()
+    var aria = ((node.getAttribute && (node.getAttribute('aria-label') || '')) || '').toLowerCase()
+    var nearEdge = rect.top < 120 || rect.left < 160 || window.innerWidth - rect.right < 180 || window.innerHeight - rect.bottom < 140
+    var compact = !node.children || node.children.length <= 2
+    if (/page|pager|pageno|slide|counter|num|no|页|幻灯片/.test(idClass + ' ' + aria)) return { node: node, parsed: parsed }
+    if (/^(fixed|sticky|absolute)$/.test(style.position)) return { node: node, parsed: parsed }
+    if (compact && nearEdge) return { node: node, parsed: parsed }
+    return null
+  }
+
+  function findRuntimeCounter(nodes, allowGeneric) {
+    for (var i = 0; i < nodes.length; i++) {
+      var found = readRuntimeCounterNode(nodes[i], allowGeneric)
+      if (found) return found
+    }
+    return null
+  }
+
   function detectRuntimePages() {
     var selectors = [
       '.page-num', '.pageNum', '#pageNum',
@@ -1538,27 +1709,24 @@
       '[class*="Page"]', '[id*="Page"]'
     ].join(',')
     var nodes = Array.prototype.slice.call(document.querySelectorAll(selectors))
-    var counter = null
-    var parsed = null
-    nodes.some(function (node) {
-      if (isVE(node)) return false
-      var text = (node.textContent || '').trim()
-      if (text.length > 40) return false
-      parsed = parsePageCounterText(text)
-      if (!parsed) return false
-      var style = getComputedStyle(node)
-      if (style.display === 'none' || style.visibility === 'hidden') return false
-      counter = node
-      return true
-    })
-    if (!counter || !parsed) return []
+    var found = findRuntimeCounter(nodes, false)
+    if (!found) {
+      found = findRuntimeCounter(Array.prototype.slice.call(document.querySelectorAll('body *')), true)
+    }
+    if (!found) return []
     var pages = []
-    for (var i = 0; i < parsed.total; i++) pages.push({ node: null, counter: counter, x: 0, y: 0 })
+    for (var i = 0; i < found.parsed.total; i++) pages.push({ node: null, counter: found.node, x: 0, y: 0 })
     return setPageMode('runtime', pages)
   }
 
   function detectPages() {
     var pages = detectSlidePages()
+    if (pages.length > 1) return pages
+
+    var runtimePages = detectRuntimePages()
+    if (runtimePages.length > 1 && shouldPreferRuntimePages(runtimePages)) return runtimePages
+
+    pages = detectActiveRuntimePages()
     if (pages.length > 1) return pages
 
     pages = detectExplicitPages()
@@ -1567,8 +1735,7 @@
     pages = detectRepeatedPages()
     if (pages.length > 1) return pages
 
-    pages = detectRuntimePages()
-    if (pages.length > 1) return pages
+    if (runtimePages.length > 1) return runtimePages
 
     var scrollTarget = findScrollTarget()
     var root = document.scrollingElement || document.documentElement
@@ -1607,7 +1774,7 @@
     if (state.pageMode === 'slide') {
       for (var i = 0; i < state.pages.length; i++) {
         var node = state.pages[i].node
-        if (node && node.classList && node.classList.contains('active')) {
+        if (hasActivePageState(node)) {
           state.currentPage = i
           return
         }
@@ -1618,6 +1785,11 @@
       var parsed = counter ? parsePageCounterText(counter.textContent) : null
       if (parsed) {
         state.currentPage = parsed.current - 1
+        return
+      }
+      var activeIndex = getActiveRuntimePageIndex()
+      if (activeIndex !== -1) {
+        state.currentPage = activeIndex
         return
       }
     }
@@ -1679,7 +1851,7 @@
     }
     state.currentPage = next
     updatePagerState()
-    setTimeout(function () { updateCurrentPage(); updatePagerState(); onScrollResize() }, 350)
+    setTimeout(function () { updateCurrentPage(); updatePagerState(); onScrollResize() }, state.pageMode === 'runtime' ? 650 : 350)
   }
 
   function activateRuntimePage(delta) {
@@ -1705,7 +1877,14 @@
   function getActiveStackedPageIndex() {
     for (var i = 0; i < state.pages.length; i++) {
       var node = state.pages[i].node
-      if (node && node.classList && node.classList.contains('active')) return i
+      if (hasActivePageState(node)) return i
+    }
+    return -1
+  }
+
+  function getActiveRuntimePageIndex() {
+    for (var i = 0; i < state.pages.length; i++) {
+      if (hasActivePageState(state.pages[i].node)) return i
     }
     return -1
   }
@@ -1779,8 +1958,51 @@
     if (isVE(e.target)) return
     if (state.textEditing && (e.target === state.textEditing || state.textEditing.contains(e.target))) return
     if (e.ctrlKey || e.altKey) return // Ctrl/Alt+click passes through to page
+    var textTarget = secondClickTextTarget(e.target)
+    if (textTarget) {
+      e.preventDefault(); e.stopPropagation()
+      startTextEdit(textTarget)
+      return
+    }
     e.preventDefault(); e.stopPropagation()
     selectElement(e.target)
+  }
+
+  function onDoubleClickCapture(e) {
+    if (!state.active) return
+    if (isVE(e.target)) return
+    if (state.textEditing && (e.target === state.textEditing || state.textEditing.contains(e.target))) return
+    if (e.ctrlKey || e.altKey) return
+    e.preventDefault(); e.stopPropagation()
+    var textTarget = doubleClickTextTarget(e.target)
+    selectElement(textTarget || e.target)
+    state.layoutOpen = true
+    state.textFlow = true
+    updateToolbarState()
+    renderPanel()
+    if (textTarget) startTextEdit(textTarget)
+  }
+
+  function secondClickTextTarget(target) {
+    if (!state.layoutOpen || !state.selected || !target) return null
+    var selected = state.selected
+    if (target !== selected && !selected.contains(target)) return null
+    if (!isTextEditable(selected)) return null
+    var tag = selected.tagName ? selected.tagName.toLowerCase() : ''
+    if (/^(img|input|textarea|select|option|video|audio|canvas|svg|iframe)$/.test(tag)) return null
+    if (/^(a|button)$/.test(tag) || isTextContentTarget(selected) || isPlainTextTarget(selected)) return selected
+    return null
+  }
+
+  function doubleClickTextTarget(target) {
+    if (!target || isVE(target)) return null
+    if (target.tagName && /^(a|button)$/i.test(target.tagName)) return target
+    if (isTextContentTarget(target) || isPlainTextTarget(target)) return target
+    if (!target.closest) return null
+    var nested = target.closest('a,button,h1,h2,h3,h4,h5,h6,p,li,blockquote,figcaption,label,span,strong,em,small')
+    if (!nested || isVE(nested)) return null
+    if (nested.tagName && /^(a|button)$/i.test(nested.tagName)) return nested
+    return isTextContentTarget(nested) || isPlainTextTarget(nested) ? nested : null
   }
 
   function onClickCapture(e) {
@@ -1826,10 +2048,11 @@
     state.layoutOpen = false
     refreshPages()
     updateToolbarState()
-    showToast(t('点击选中元素 · 按住 Ctrl 点击可触发页面原有功能'), 3000)
+    showToast(t('点击选中元素 · 双击文字直接编辑 · Ctrl 点击触发原页面'), 3000)
     document.addEventListener('mousemove', onMouseMove, true)
     document.addEventListener('mousedown', onMouseDown, true)
     document.addEventListener('click', onClickCapture, true)
+    document.addEventListener('dblclick', onDoubleClickCapture, true)
     window.addEventListener('scroll', onScrollResize, true)
     window.addEventListener('resize', onScrollResize)
   }
@@ -1849,6 +2072,7 @@
     document.removeEventListener('mousemove', onMouseMove, true)
     document.removeEventListener('mousedown', onMouseDown, true)
     document.removeEventListener('click', onClickCapture, true)
+    document.removeEventListener('dblclick', onDoubleClickCapture, true)
     window.removeEventListener('scroll', onScrollResize, true)
     window.removeEventListener('resize', onScrollResize)
   }
@@ -1946,150 +2170,6 @@
     showToast(successText || t('HTML 已保存'))
   }
 
-  function exportCurrentPNG() {
-    captureDocumentPNG('page-' + Date.now() + '.png').then(function () {
-      showToast(t('整页 PNG 已导出'))
-    }, function () {
-      showToast(t('PNG 导出失败：请确认页面图片未被跨域限制'))
-    })
-  }
-
-  async function exportAllPNGs() {
-    refreshPages()
-    if (!hasUsablePager()) {
-      exportCurrentPNG()
-      return
-    }
-    var original = state.currentPage
-    var total = state.pages.length
-    showToast(t('开始导出 ') + total + t(' 页 PNG'))
-    try {
-      for (var i = 0; i < total; i++) {
-        goToPageIndex(i)
-        await wait(450)
-        await capturePagePNG('page-' + padNumber(i + 1, 2) + '.png', state.pages[i])
-        await wait(120)
-      }
-      showToast(t('全部 PNG 已导出'))
-    } catch (e) {
-      showToast(t('PNG 导出失败：请确认页面图片未被跨域限制'))
-    }
-    goToPageIndex(original)
-  }
-
-  function capturePagePNG(filename, page) {
-    if (page && page.node) return captureElementPNG(page.node, filename)
-    if (page) return captureViewportPNG(filename)
-    return captureDocumentPNG(filename)
-  }
-
-  function captureDocumentPNG(filename) {
-    var width = Math.max(document.documentElement.scrollWidth, document.body ? document.body.scrollWidth : 0, window.innerWidth)
-    var height = Math.max(document.documentElement.scrollHeight, document.body ? document.body.scrollHeight : 0, window.innerHeight)
-    return captureCanvasPNG(document.documentElement, filename, {
-      width: width,
-      height: height,
-      windowWidth: width,
-      windowHeight: height,
-      scrollX: 0,
-      scrollY: 0,
-      x: 0,
-      y: 0
-    })
-  }
-
-  function captureElementPNG(node, filename) {
-    var rect = node.getBoundingClientRect()
-    return captureCanvasPNG(node, filename, {
-      width: Math.ceil(rect.width || node.scrollWidth || window.innerWidth),
-      height: Math.ceil(rect.height || node.scrollHeight || window.innerHeight),
-      windowWidth: Math.max(document.documentElement.scrollWidth, window.innerWidth),
-      windowHeight: Math.max(document.documentElement.scrollHeight, window.innerHeight),
-      scrollX: 0,
-      scrollY: 0
-    })
-  }
-
-  function captureViewportPNG(filename) {
-    return captureCanvasPNG(document.body || document.documentElement, filename, {
-      x: window.pageXOffset || document.documentElement.scrollLeft || 0,
-      y: window.pageYOffset || document.documentElement.scrollTop || 0,
-      width: window.innerWidth,
-      height: window.innerHeight,
-      windowWidth: window.innerWidth,
-      windowHeight: window.innerHeight,
-      scrollX: -(window.pageXOffset || document.documentElement.scrollLeft || 0),
-      scrollY: -(window.pageYOffset || document.documentElement.scrollTop || 0)
-    })
-  }
-
-  function captureCanvasPNG(target, filename, options) {
-    finishTextEdit()
-    hideOv(dom.hoverOv)
-    hideOv(dom.selOv)
-    return loadHtml2Canvas().then(function () {
-      var hidden = hideEditorForCapture()
-      return window.html2canvas(target, Object.assign({
-        backgroundColor: '#ffffff',
-        useCORS: true,
-        allowTaint: false,
-        logging: false
-      }, options || {})).then(function (canvas) {
-        restoreEditorAfterCapture(hidden)
-        return new Promise(function (resolve, reject) {
-          canvas.toBlob(function (blob) {
-            if (!blob) { reject(new Error('empty png')); return }
-            downloadBlob(blob, filename, t('PNG 已导出'))
-            resolve()
-          }, 'image/png')
-        })
-      }, function (err) {
-        restoreEditorAfterCapture(hidden)
-        throw err
-      })
-    })
-  }
-
-  function loadHtml2Canvas() {
-    if (window.html2canvas) return Promise.resolve()
-    if (dom.html2canvasLoading) return dom.html2canvasLoading
-    dom.html2canvasLoading = new Promise(function (resolve, reject) {
-      var script = document.createElement('script')
-      script.src = new URL('vendor/html2canvas.min.js', getEditorSrc()).href
-      script.setAttribute('data-ve', '1')
-      script.onload = function () { window.html2canvas ? resolve() : reject(new Error('html2canvas missing')) }
-      script.onerror = function () { reject(new Error('html2canvas load failed')) }
-      document.head.appendChild(script)
-    })
-    return dom.html2canvasLoading
-  }
-
-  function hideEditorForCapture() {
-    var nodes = [dom.root, dom.toggle, dom.hoverOv, dom.selOv]
-    return nodes.map(function (node) {
-      if (!node) return null
-      var prev = node.style.visibility
-      node.style.visibility = 'hidden'
-      return { node: node, visibility: prev }
-    })
-  }
-
-  function restoreEditorAfterCapture(items) {
-    ;(items || []).forEach(function (item) {
-      if (item && item.node) item.node.style.visibility = item.visibility
-    })
-  }
-
-  function wait(ms) {
-    return new Promise(function (resolve) { setTimeout(resolve, ms) })
-  }
-
-  function padNumber(num, size) {
-    var text = String(num)
-    while (text.length < size) text = '0' + text
-    return text
-  }
-
   function goToPageIndex(index) {
     refreshPages()
     if (!state.pages.length) return
@@ -2133,6 +2213,7 @@
   // ========== Init ==========
 
   function init() {
+    if (document.getElementById(PREFIX + '-root')) return
     injectCSS()
     createUI()
     try {

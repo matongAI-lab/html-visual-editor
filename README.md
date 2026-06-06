@@ -10,11 +10,11 @@ It lets you open an AI-generated HTML page, click elements directly in the rende
 - Paste HTML code directly into the editor.
 - Enter edit mode automatically after an uploaded or demo HTML file is loaded.
 - Select elements visually from the page.
+- Use the compact structure position bar to jump to the previous, current, or next nearby editable structure item.
 - Edit text on selected elements.
 - Adjust typography, spacing, size, color, background, border radius, and shadow.
 - Undo and restore recent changes.
-- Download a clean HTML file with editor-specific code removed.
-- Export the full HTML document as PNG, or batch-export detected pages as PNG files.
+- Copy or download a clean HTML file with editor-specific code removed.
 - Handle common slide-style or paginated HTML files when the page structure can be detected safely.
 
 ## What It Is Good For
@@ -86,7 +86,21 @@ When you download or copy the edited HTML, the editor removes its own runtime ar
 
 The exported file should be a normal static HTML file, not a file that depends on this editor.
 
-PNG export uses the bundled local `html2canvas` runtime. **导出整页 PNG / Full PNG** captures the full HTML document rather than only the visible viewport. **按页导出 PNG / Page PNGs** exports each detected page when the editor can identify a reliable page structure. It works best for static pages with local or CORS-enabled images. Browser security rules may block PNG export for cross-origin images that do not allow canvas rendering.
+## Upload Behavior
+
+Dropping or selecting an HTML file loads it and enters visual editing mode automatically. This is intentional: the tool is designed for quick touch-up work, so opening a file usually means the next action is editing the rendered page.
+
+If you want to inspect or change the source before editing, use the paste tab instead. Pasted HTML waits for the "Start editing" button.
+
+## Structure Position Bar
+
+The style panel does not show a full page outline. After you select an element, the page structure area shows only three nearby items:
+
+- Previous structure item.
+- Current selected structure item.
+- Next structure item.
+
+The nearby items follow document order and can be clicked to jump through headings, paragraphs, list items, links, buttons, images, and useful leaf text containers such as `div` and `span`. This keeps the panel compact while still making it easier to move around dense AI-generated pages.
 
 ## Page Navigation
 
@@ -94,11 +108,12 @@ The editor only shows its own page controls when it can detect a reliable multi-
 
 Supported cases include:
 
+- Runtime-controlled pages with visible counters such as `1 / 12`.
+- Runtime-controlled horizontal decks that use `active`, `current`, or `is-active` page state.
 - Explicit slide or page elements.
 - Repeated page blocks.
-- Scroll-based pages.
+- Scroll-based pages and inner scroll containers.
 - Stacked slide decks using active/previous classes.
-- Runtime-rendered pages with visible counters such as `1 / 12`.
 
 If the editor cannot confidently detect pages, it hides its own page controls and lets the original page controls continue to work.
 

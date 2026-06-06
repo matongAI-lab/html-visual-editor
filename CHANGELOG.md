@@ -4,8 +4,20 @@
 
 ### Changed
 
-- Renamed export toolbar actions for clarity: **保存 HTML**, **导出整页 PNG**, and **按页导出 PNG**.
-- Clarified PNG behavior in docs: the single PNG action exports the full HTML document, while the batch PNG action exports detected pages.
+- Grouped the floating toolbar into edit, navigation, and save actions to reduce visual crowding.
+- Temporarily removed PNG export actions from the toolbar while the export behavior is being reworked.
+- Replaced the full structure tree with a compact structure position bar that only shows the previous, current, and next editable structure item.
+- Broadened the internal structure candidates to include headings, paragraphs, list items, captions, labels, and leaf text `div` / `span` nodes without flooding the panel UI.
+- Added plain text editing inside the layout panel so style and copy tweaks can happen in one flow.
+- Added double-click text editing from the default visual selection state.
+- Fixed horizontal transform-based slide decks so page navigation follows the original runtime state.
+- Broadened page detection for generic page counters, active/current slide states, inner scroll containers, repeated page blocks, and stacked slides.
+- Clarified upload/demo behavior: loaded HTML files enter visual editing mode automatically to keep the touch-up flow short.
+
+### Testing
+
+- Added regression coverage for the compact structure position bar and nearby item navigation.
+- Verified the Swiss sample page shows only three structure rows around the selected title instead of a long page-wide directory.
 
 ## 0.3.1 — 2026-06-06
 

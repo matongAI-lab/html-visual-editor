@@ -26,14 +26,6 @@ async function ensureEditMode(page) {
   }
 }
 
-function readPngSize(filePath) {
-  const buffer = fs.readFileSync(filePath)
-  return {
-    width: buffer.readUInt32BE(16),
-    height: buffer.readUInt32BE(20)
-  }
-}
-
 test('loads demo and automatically enters visual editing mode', async ({ page }) => {
   await page.goto(`${baseURL}/index.html`)
 
@@ -51,8 +43,8 @@ test('loads demo and automatically enters visual editing mode', async ({ page })
   await expect(page.locator('[data-ve-action="toggle-layout"]')).toBeVisible()
   await expect(page.locator('[data-ve-action="copy-html"]')).toContainText(/复制 HTML|Copy HTML/)
   await expect(page.locator('[data-ve-action="download-html"]')).toContainText(/保存 HTML|Save HTML/)
-  await expect(page.locator('[data-ve-action="export-png"]')).toContainText(/导出整页 PNG|Full PNG/)
-  await expect(page.locator('[data-ve-action="export-all-png"]')).toContainText(/按页导出 PNG|Page PNGs/)
+  await expect(page.locator('[data-ve-action="export-png"]')).toHaveCount(0)
+  await expect(page.locator('[data-ve-action="export-all-png"]')).toHaveCount(0)
 
   await page.mouse.click(80, 260)
   await expect(page.locator('.__ve-sel-ov')).toBeVisible()
@@ -150,6 +142,36 @@ test('supports continuous text edits across different elements', async ({ page }
   await expect(page.locator('#second')).toContainText('Second changed')
 })
 
+test('double-clicking text opens layout and text editing together', async ({ page }) => {
+  await page.goto(`${baseURL}/index.html`)
+  await page.locator('[data-tab="paste"]').click()
+  await page.locator('#html-input').fill(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>body { margin: 0; padding: 140px; font-family: sans-serif; } h1 { font-size: 56px; }</style>
+</head>
+<body>
+  <h1>Double <span>click title</span></h1>
+</body>
+</html>`)
+
+  await page.locator('#btn-start').click()
+  await ensureEditMode(page)
+  await expect(page.locator('[data-ve-action="toggle-layout"]')).not.toHaveClass(/active/)
+  await expect(page.locator('[data-ve-action="edit-text"]')).not.toHaveClass(/active/)
+
+  await page.locator('h1').dblclick({ position: { x: 20, y: 20 } })
+  await expect(page.locator('.__ve-panel.visible')).toBeVisible()
+  await expect(page.locator('[data-ve-action="toggle-layout"]')).toHaveClass(/active/)
+  await expect(page.locator('[data-ve-action="edit-text"]')).toHaveClass(/active/)
+  await expect(page.locator('h1')).toHaveAttribute('contenteditable', 'true')
+
+  await page.keyboard.press('Control+A')
+  await page.keyboard.type('Double click changed')
+  await expect(page.locator('h1')).toContainText('Double click changed')
+})
+
 test('edits anchor href from the style panel', async ({ page }) => {
   await page.goto(`${baseURL}/index.html`)
   await page.locator('[data-tab="paste"]').click()
@@ -165,11 +187,7 @@ test('edits anchor href from the style panel', async ({ page }) => {
 </html>`)
 
   await page.locator('#btn-start').click()
-  await expect(page.locator('.__ve-toolbar')).toHaveCount(1)
-  if (!await page.locator('.__ve-toggle.active').count()) {
-    await page.locator('.__ve-toggle').evaluate(button => button.click())
-  }
-  await expect(page.locator('.__ve-toggle')).toHaveClass(/active/)
+  await ensureEditMode(page)
   await page.locator('#cta').click()
   await page.locator('[data-ve-action="toggle-layout"]').click({ force: true })
   await expect(page.locator('.__ve-panel.visible')).toBeVisible()
@@ -286,8 +304,10 @@ test('edits common content attributes from the panel', async ({ page }) => {
   </style>
 </head>
 <body>
+  <h1>Big <span>Title</span></h1>
   <a href="https://old.example">Old link</a>
   <button type="button">Old button</button>
+  <p>Old paragraph</p>
   <img src="old.png" alt="Old alt">
 </body>
 </html>`)
@@ -296,12 +316,24 @@ test('edits common content attributes from the panel', async ({ page }) => {
   await ensureEditMode(page)
   await page.locator('a').click()
   await page.locator('[data-ve-action="toggle-layout"]').click()
+
+  await page.locator('h1').click({ position: { x: 8, y: 8 } })
+  const richTextBox = page.locator('.__ve-content-box').filter({ hasText: /直接编辑文字|Edit Text Directly/ })
+  await expect(richTextBox).toBeVisible()
+  await page.locator('h1').click({ position: { x: 16, y: 12 } })
+  await expect(page.locator('h1')).toHaveAttribute('contenteditable', 'true')
+  await expect(page.locator('.__ve-panel.visible')).toBeVisible()
+  await page.keyboard.press('Escape')
+
+  await page.locator('a').click()
   const linkPanel = page.locator('.__ve-panel').filter({ hasText: /链接|Link/ })
   await expect(linkPanel).toBeVisible()
-  const hrefInput = page.locator('.__ve-panel input').first()
+  const linkGroup = page.locator('.__ve-group').filter({ hasText: /跳转地址|URL/ })
+  const hrefInput = linkGroup.locator('input').first()
+  await expect(hrefInput).toBeVisible()
   await hrefInput.fill('https://new.example')
   await hrefInput.blur()
-  await page.locator('.__ve-panel select').first().selectOption('_blank')
+  await linkGroup.locator('select').first().selectOption('_blank')
   await expect(page.locator('a')).toHaveAttribute('href', 'https://new.example')
   await expect(page.locator('a')).toHaveAttribute('target', '_blank')
 
@@ -312,7 +344,14 @@ test('edits common content attributes from the panel', async ({ page }) => {
   await buttonBox.locator('input').blur()
   await expect(page.getByRole('button', { name: 'New button', exact: true })).toBeVisible()
 
-  await page.locator('img').click()
+  await page.locator('p').click()
+  const textBox = page.locator('.__ve-content-box').filter({ hasText: /文字内容|Text Content/ })
+  await expect(textBox).toBeVisible()
+  await textBox.locator('input').fill('New paragraph')
+  await textBox.locator('input').blur()
+  await expect(page.getByText('New paragraph')).toBeVisible()
+
+  await page.locator('.__ve-tree-item').filter({ hasText: 'img' }).click()
   const imageBox = page.locator('.__ve-content-box').filter({ hasText: /img/ })
   await expect(imageBox).toBeVisible()
   await imageBox.locator('input').nth(0).fill('new.png')
@@ -323,7 +362,7 @@ test('edits common content attributes from the panel', async ({ page }) => {
   await expect(page.locator('img')).toHaveAttribute('alt', 'New alt')
 })
 
-test('selects whole blocks from the structure tree', async ({ page }) => {
+test('selects nearby items from the compact structure bar', async ({ page }) => {
   await page.goto(`${baseURL}/index.html`)
   await page.getByRole('tab', { name: '粘贴代码' }).click()
   await page.locator('#html-input').fill(`<!DOCTYPE html>
@@ -337,9 +376,9 @@ test('selects whole blocks from the structure tree', async ({ page }) => {
   </style>
 </head>
 <body>
-  <header><nav><a href="#intro">Intro link</a></nav></header>
+  <header><nav><a href="#intro">Intro link</a></nav><span class="eyebrow">Header note</span></header>
   <main>
-    <section id="intro"><h1>Intro section</h1><button type="button">Primary action</button><img src="hero.png" alt="Hero image"></section>
+    <section id="intro"><h1>Intro section</h1><p>Intro paragraph</p><ul><li>List detail</li></ul><div class="metric">42 projects</div><button type="button">Primary action</button><img src="hero.png" alt="Hero image"></section>
   </main>
   <footer>Footer text</footer>
 </body>
@@ -348,86 +387,18 @@ test('selects whole blocks from the structure tree', async ({ page }) => {
   await page.locator('#btn-start').click()
   await ensureEditMode(page)
   await page.locator('[data-ve-action="toggle-layout"]').click()
-  await expect(page.locator('.__ve-tree-box')).toContainText('header')
-  await expect(page.locator('.__ve-tree-box')).toContainText('nav')
+  await expect(page.locator('.__ve-tree-box')).toContainText(/点击页面元素后显示结构位置|Click an element/)
+
+  await page.locator('h1').click()
+  await expect(page.locator('.__ve-tree-item')).toHaveCount(3)
   await expect(page.locator('.__ve-tree-box')).toContainText('section#intro')
-  await expect(page.locator('.__ve-tree-box')).toContainText('button')
-  await expect(page.locator('.__ve-tree-box')).toContainText('img')
-  await expect(page.locator('.__ve-tree-box')).toContainText('footer')
+  await expect(page.locator('.__ve-tree-box')).toContainText('h1')
+  await expect(page.locator('.__ve-tree-box')).toContainText('Intro paragraph')
+  await expect(page.locator('.__ve-tree-box')).not.toContainText('List detail')
 
   await page.locator('.__ve-tree-item').filter({ hasText: 'section#intro' }).click()
   await expect(page.locator('.__ve-panel-title .__ve-panel-subtitle')).toHaveText('section')
   await expect(page.locator('.__ve-sel-ov')).toBeVisible()
-})
-
-test('exports current page and all pages as png downloads', async ({ page }) => {
-  await page.goto(`${baseURL}/index.html`)
-  await page.getByRole('tab', { name: '粘贴代码' }).click()
-  await page.locator('#html-input').fill(`<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <style>
-    body { margin: 0; font-family: sans-serif; background: white; }
-    section { min-height: 100vh; display: grid; place-items: center; font-size: 48px; }
-    section:nth-child(1) { background: #eff6ff; }
-    section:nth-child(2) { background: #fef3c7; }
-  </style>
-</head>
-<body>
-  <section>PNG page 1</section>
-  <section>PNG page 2</section>
-</body>
-</html>`)
-
-  await page.locator('#btn-start').click()
-  await ensureEditMode(page)
-
-  const currentDownloadPromise = page.waitForEvent('download')
-  await page.locator('[data-ve-action="export-png"]').click()
-  const currentDownload = await currentDownloadPromise
-  expect(currentDownload.suggestedFilename()).toMatch(/\.png$/)
-  expect(await currentDownload.failure()).toBeNull()
-
-  const downloads = []
-  page.on('download', download => downloads.push(download))
-  await page.locator('[data-ve-action="export-all-png"]').click()
-  await expect.poll(() => downloads.length, { timeout: 30000 }).toBe(2)
-  expect(downloads.map(download => download.suggestedFilename())).toEqual(['page-01.png', 'page-02.png'])
-})
-
-test('exports a single long html document as a full-height png', async ({ page }) => {
-  await page.goto(`${baseURL}/index.html`)
-  await page.getByRole('tab', { name: '粘贴代码' }).click()
-  await page.locator('#html-input').fill(`<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <style>
-    body { margin: 0; font-family: sans-serif; background: white; }
-    .hero, .body, .ending { min-height: 720px; display: grid; place-items: center; font-size: 42px; }
-    .hero { background: #eff6ff; }
-    .body { background: #f8fafc; }
-    .ending { background: #ecfdf5; }
-  </style>
-</head>
-<body>
-  <div class="hero">Top content</div>
-  <div class="body">Middle content</div>
-  <div class="ending">Bottom content</div>
-</body>
-</html>`)
-
-  await page.locator('#btn-start').click()
-  await ensureEditMode(page)
-
-  const viewportHeight = await page.evaluate(() => window.innerHeight)
-  const downloadPromise = page.waitForEvent('download')
-  await page.locator('[data-ve-action="export-png"]').click()
-  const download = await downloadPromise
-  expect(await download.failure()).toBeNull()
-  const size = readPngSize(await download.path())
-  expect(size.height).toBeGreaterThan(viewportHeight * 2)
 })
 
 test('next page scrolls an inner page container', async ({ page }) => {
@@ -486,6 +457,118 @@ test('uses explicit slide count instead of viewport-estimated pages', async ({ p
 
   await page.locator('#btn-start').click()
   await expect(page.locator('.__ve-page-label')).toContainText('1/16')
+})
+
+test('uses runtime paging for horizontal active slide decks', async ({ page }) => {
+  await page.goto(`${baseURL}/index.html`)
+  await page.getByRole('tab', { name: '粘贴代码' }).click()
+  await page.locator('#html-input').fill(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    html, body { margin: 0; height: 100%; overflow: hidden; font-family: sans-serif; }
+    .deck { display: flex; height: 100vh; transition: transform .5s ease; }
+    .slide { flex: 0 0 100vw; width: 100vw; height: 100vh; display: grid; place-items: center; }
+    .slide > * { opacity: 0; transform: translateY(14px); transition: opacity .5s ease, transform .5s ease; }
+    .slide.active > * { opacity: 1; transform: none; }
+    #pageno { position: fixed; right: 24px; bottom: 24px; }
+  </style>
+</head>
+<body>
+  <main class="deck" id="deck">
+    <section class="slide active"><h1>第一页</h1></section>
+    <section class="slide"><h1>第二页</h1></section>
+    <section class="slide"><h1>第三页</h1></section>
+  </main>
+  <span id="pageno">№ 01 / 03</span>
+  <script>
+    const deck = document.getElementById('deck')
+    const slides = Array.from(document.querySelectorAll('.slide'))
+    const pageno = document.getElementById('pageno')
+    let idx = 0
+    function pad(n) { return String(n).padStart(2, '0') }
+    function go(n) {
+      idx = Math.max(0, Math.min(slides.length - 1, n))
+      deck.style.transform = 'translateX(-' + (idx * 100) + 'vw)'
+      slides.forEach((slide, i) => slide.classList.toggle('active', i === idx))
+      pageno.textContent = '№ ' + pad(idx + 1) + ' / ' + pad(slides.length)
+    }
+    document.addEventListener('keydown', e => {
+      if (e.key === 'ArrowRight') { e.preventDefault(); go(idx + 1) }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); go(idx - 1) }
+    })
+    go(0)
+  </script>
+</body>
+</html>`)
+
+  await page.locator('#btn-start').click()
+  await ensureEditMode(page)
+  await expect(page.locator('.__ve-page-label')).toContainText('1/3')
+
+  const box = await page.locator('[data-ve-action="next-page"]').boundingBox()
+  expect(box).not.toBeNull()
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2)
+  await page.waitForTimeout(900)
+
+  await expect(page.locator('.__ve-page-label')).toContainText('2/3')
+  await expect(page.locator('#pageno')).toContainText('02 / 03')
+  await expect(page.locator('.slide').nth(1)).toHaveClass(/active/)
+  await expect(page.locator('.slide').nth(1).locator('h1')).toContainText('第二页')
+})
+
+test('uses runtime paging for active horizontal decks without counters', async ({ page }) => {
+  await page.goto(`${baseURL}/index.html`)
+  await page.getByRole('tab', { name: '粘贴代码' }).click()
+  await page.locator('#html-input').fill(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    html, body { margin: 0; height: 100%; overflow: hidden; font-family: sans-serif; }
+    .track { display: flex; width: 300vw; height: 100vh; transition: transform .4s ease; }
+    .panel-slide { flex: 0 0 100vw; height: 100vh; display: grid; place-items: center; }
+    .panel-slide h1 { opacity: 0; transition: opacity .25s ease; }
+    .panel-slide.current h1 { opacity: 1; }
+  </style>
+</head>
+<body>
+  <main class="track" id="track">
+    <section class="panel-slide current"><h1>第一页</h1></section>
+    <section class="panel-slide"><h1>第二页</h1></section>
+    <section class="panel-slide"><h1>第三页</h1></section>
+  </main>
+  <script>
+    const track = document.getElementById('track')
+    const slides = Array.from(document.querySelectorAll('.panel-slide'))
+    let idx = 0
+    function go(n) {
+      idx = Math.max(0, Math.min(slides.length - 1, n))
+      track.style.transform = 'translateX(-' + (idx * 100) + 'vw)'
+      slides.forEach((slide, i) => slide.classList.toggle('current', i === idx))
+    }
+    document.addEventListener('keydown', e => {
+      if (e.key === 'ArrowRight') { e.preventDefault(); go(idx + 1) }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); go(idx - 1) }
+    })
+    go(0)
+  </script>
+</body>
+</html>`)
+
+  await page.locator('#btn-start').click()
+  await ensureEditMode(page)
+  await expect(page.locator('.__ve-page-label')).toContainText('1/3')
+
+  const box = await page.locator('[data-ve-action="next-page"]').boundingBox()
+  expect(box).not.toBeNull()
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2)
+  await page.waitForTimeout(800)
+
+  await expect(page.locator('.__ve-page-label')).toContainText('2/3')
+  await expect(page.locator('.panel-slide').nth(1)).toHaveClass(/current/)
+  await expect(page.locator('.panel-slide').nth(1).locator('h1')).toContainText('第二页')
 })
 
 test('infers anonymous repeated page blocks', async ({ page }) => {
@@ -566,7 +649,7 @@ test('reads runtime generated page counters', async ({ page }) => {
     html, body { margin: 0; height: 100%; overflow: hidden; font-family: sans-serif; }
     .slide-viewport { width: 100vw; height: 100vh; display: grid; place-items: center; background: #111; color: white; }
     .slide-inner { font-size: 42px; }
-    .page-num { position: fixed; right: 24px; bottom: 24px; color: #999; }
+    .counter { position: fixed; right: 24px; bottom: 24px; color: #999; }
   </style>
 </head>
 <body>
@@ -578,7 +661,7 @@ test('reads runtime generated page counters', async ({ page }) => {
     const inner = document.createElement('div')
     inner.className = 'slide-inner'
     const pageNum = document.createElement('div')
-    pageNum.className = 'page-num'
+    pageNum.className = 'counter'
     viewport.appendChild(inner)
     viewport.appendChild(pageNum)
     document.body.appendChild(viewport)
@@ -588,7 +671,7 @@ test('reads runtime generated page counters', async ({ page }) => {
     }
     function go(dir) {
       cur = Math.max(0, Math.min(S.length - 1, cur + dir))
-      render()
+      setTimeout(render, 400)
     }
     document.addEventListener('keydown', e => {
       if (e.key === 'ArrowRight') go(1)
@@ -600,12 +683,14 @@ test('reads runtime generated page counters', async ({ page }) => {
 </html>`)
 
   await page.locator('#btn-start').click()
+  await ensureEditMode(page)
   await expect(page.locator('.__ve-page-label')).toContainText('1/12')
+  await expect(page.locator('#__ve-root')).toHaveCount(1)
 
   const box = await page.locator('[data-ve-action="next-page"]').boundingBox()
   expect(box).not.toBeNull()
   await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2)
-  await page.waitForTimeout(300)
+  await page.waitForTimeout(800)
 
   await expect(page.locator('.__ve-page-label')).toContainText('2/12')
   await expect(page.locator('.slide-inner h1')).toContainText('第 2 页')
