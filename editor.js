@@ -65,6 +65,9 @@
     '当前区块：': 'Block: ', '当前区块：未识别': 'Block: None',
     '选中区块': 'Select', '复制区块': 'Copy', '上移区块': 'Move Up', '下移区块': 'Move Down', '删除区块': 'Delete',
     '内容属性：': 'Content: ', '文字内容': 'Text Content', '直接编辑文字': 'Edit Text Directly', '链接文字': 'Link Text', '按钮文字': 'Button Text', '图片地址 src': 'Image URL', '图片 alt': 'Image Alt',
+    '替换图片': 'Replace Image', '图片裁切': 'Image Fit', '图片位置': 'Image Position',
+    'cover 填满裁切': 'cover', 'contain 完整显示': 'contain', 'fill 拉伸填充': 'fill', 'none 原始大小': 'none', 'scale-down 自动缩小': 'scale-down',
+    '图片已替换': 'Image replaced',
     '当前窗口打开': 'Same Tab', '新窗口打开': 'New Tab',
     '样式面板': 'Style Panel', '未选择': 'None',
     '进入编辑模式后，点击页面里的标题、段落、卡片或按钮开始调整。': 'Enter edit mode, then click any element to start.',
@@ -410,6 +413,11 @@
 ' + P + 'tree-tag{font-family:"SF Mono",Monaco,Consolas,monospace;color:#93c5fd}\
 ' + P + 'tree-item.muted ' + P + 'tree-tag{color:#64748b}\
 ' + P + 'tree-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#94a3b8}\
+' + P + 'pos-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px;width:90px}\
+' + P + 'pos-cell{width:26px;height:26px;border-radius:5px;border:1px solid rgba(148,163,184,.18);background:rgba(255,255,255,.045);cursor:pointer;transition:all .15s ' + EASE + ';padding:0}\
+' + P + 'pos-cell:hover{background:rgba(255,255,255,.09);border-color:rgba(148,163,184,.3)}\
+' + P + 'pos-cell.active{background:#2563eb;border-color:#3b82f6}\
+' + P + 'file-input{display:none}\
 @media (max-width:720px){\
 ' + P + 'toggle{right:16px;bottom:16px;width:46px;height:46px}\
 ' + P + 'toolbar{top:8px;left:8px;right:8px;justify-content:flex-start;max-height:144px;overflow:auto}\
@@ -512,6 +520,11 @@
 
   function cs(el, prop) { return getComputedStyle(el)[prop] }
   function round(v) { return Math.round(v * 100) / 100 }
+  function normalizePos(v) {
+    var map = { left: '0%', center: '50%', right: '100%', top: '0%', bottom: '100%' }
+    var parts = (v || '50% 50%').trim().split(/\s+/)
+    return parts.map(function (p) { return map[p] || p }).join(' ')
+  }
 
   function showToast(msg, ms) {
     dom.toast.textContent = msg
@@ -632,12 +645,17 @@
     dom.selOv.appendChild(el('span', PREFIX + '-ov-tag'))
 
     dom.toast = el('div', PREFIX + '-toast')
+    dom.fileInput = el('input', PREFIX + '-file-input')
+    dom.fileInput.type = 'file'
+    dom.fileInput.accept = 'image/*'
+    dom.fileInput.setAttribute('data-ve-ui', '1')
 
     dom.root.appendChild(dom.toolbar)
     dom.root.appendChild(dom.panel)
     dom.root.appendChild(dom.hoverOv)
     dom.root.appendChild(dom.selOv)
     dom.root.appendChild(dom.toast)
+    dom.root.appendChild(dom.fileInput)
     document.body.appendChild(dom.root)
     document.body.appendChild(dom.toggle)
   }
@@ -903,6 +921,65 @@
     } else if (tag === 'img') {
       grid.appendChild(renderContentInput(t('图片地址 src'), editable.getAttribute('src') || '', function (value) { applyAttribute(editable, 'src', value); updateSelOverlay() }))
       grid.appendChild(renderContentInput(t('图片 alt'), editable.getAttribute('alt') || '', function (value) { applyAttribute(editable, 'alt', value) }))
+      // Replace image from local file
+      grid.appendChild(renderContentAction(t('替换图片'), function () {
+        dom.fileInput.value = ''
+        dom.fileInput.onchange = function () {
+          var file = dom.fileInput.files && dom.fileInput.files[0]
+          if (!file || file.type.indexOf('image/') !== 0) return
+          var reader = new FileReader()
+          reader.onload = function () {
+            applyAttribute(editable, 'src', reader.result)
+            updateSelOverlay()
+            showToast(t('图片已替换'))
+            renderPanel()
+          }
+          reader.readAsDataURL(file)
+        }
+        dom.fileInput.click()
+      }))
+      // object-fit selector
+      var fitWrap = el('div', null)
+      fitWrap.appendChild(el('div', PREFIX + '-content-label', { text: t('图片裁切') }))
+      var fitSel = el('select', PREFIX + '-select')
+      var currentFit = editable.style.objectFit || cs(editable, 'objectFit') || 'fill'
+      ;[
+        { value: 'cover', label: t('cover 填满裁切') },
+        { value: 'contain', label: t('contain 完整显示') },
+        { value: 'fill', label: t('fill 拉伸填充') },
+        { value: 'none', label: t('none 原始大小') },
+        { value: 'scale-down', label: t('scale-down 自动缩小') }
+      ].forEach(function (opt) {
+        var o = el('option', null, { text: opt.label })
+        o.value = opt.value
+        if (opt.value === currentFit) o.selected = true
+        fitSel.appendChild(o)
+      })
+      fitSel.addEventListener('change', function () { applyStyle('objectFit', fitSel.value) })
+      fitWrap.appendChild(fitSel)
+      grid.appendChild(fitWrap)
+      // object-position 3x3 grid
+      var posWrap = el('div', null)
+      posWrap.appendChild(el('div', PREFIX + '-content-label', { text: t('图片位置') }))
+      var posGrid = el('div', PREFIX + '-pos-grid')
+      var currentPos = normalizePos(editable.style.objectPosition || cs(editable, 'objectPosition'))
+      var positions = [
+        'left top', 'center top', 'right top',
+        'left center', 'center center', 'right center',
+        'left bottom', 'center bottom', 'right bottom'
+      ]
+      positions.forEach(function (pos) {
+        var cell = el('button', PREFIX + '-pos-cell', { type: 'button' })
+        if (normalizePos(pos) === currentPos) cell.classList.add('active')
+        cell.addEventListener('click', function () {
+          each(posGrid.querySelectorAll('.' + PREFIX + '-pos-cell'), function (c) { c.classList.remove('active') })
+          cell.classList.add('active')
+          applyStyle('objectPosition', pos)
+        })
+        posGrid.appendChild(cell)
+      })
+      posWrap.appendChild(posGrid)
+      grid.appendChild(posWrap)
     } else if (isPlainTextTarget(editable)) {
       grid.appendChild(renderContentInput(t('文字内容'), editable.textContent || '', function (value) { applyTextContent(editable, value) }))
     } else {
