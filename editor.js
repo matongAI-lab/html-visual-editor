@@ -6,7 +6,7 @@
   var EASE = 'cubic-bezier(.4,0,.2,1)'
   var EASE_OUT = 'cubic-bezier(0,.7,.3,1)'
 
-  var state = { active: false, selected: null, hovered: null, textEditing: null, textFlow: false, history: [], future: [], pages: [], pageMode: 'scroll', currentPage: 0, restoring: false, layoutOpen: false }
+  var state = { active: false, selected: null, hovered: null, textEditing: null, textFlow: false, history: [], future: [], pages: [], pageMode: 'scroll', currentPage: 0, restoring: false, layoutOpen: false, dragging: null, dragCandidate: null, dropTarget: null, dropBefore: false }
   var dom = {}
 
   function each(list, fn) { Array.prototype.forEach.call(list, fn) }
@@ -68,6 +68,8 @@
     '替换图片': 'Replace Image', '图片裁切': 'Image Fit', '图片位置': 'Image Position',
     'cover 填满裁切': 'cover', 'contain 完整显示': 'contain', 'fill 拉伸填充': 'fill', 'none 原始大小': 'none', 'scale-down 自动缩小': 'scale-down',
     '图片已替换': 'Image replaced',
+    '元素已移动': 'Element moved', '按住拖动到新位置': 'Hold and drag to reorder',
+    '不能放到自己里面': 'Cannot drop into itself',
     '当前窗口打开': 'Same Tab', '新窗口打开': 'New Tab',
     '样式面板': 'Style Panel', '未选择': 'None',
     '进入编辑模式后，点击页面里的标题、段落、卡片或按钮开始调整。': 'Enter edit mode, then click any element to start.',
@@ -418,6 +420,12 @@
 ' + P + 'pos-cell:hover{background:rgba(255,255,255,.09);border-color:rgba(148,163,184,.3)}\
 ' + P + 'pos-cell.active{background:#2563eb;border-color:#3b82f6}\
 ' + P + 'file-input{display:none}\
+' + P + 'drop-ind{position:fixed;background:#60a5fa;border-radius:2px;box-shadow:0 0 8px rgba(96,165,250,.6);pointer-events:none;z-index:' + (Z + 6) + ';display:none;transition:none}\
+' + P + 'drop-ind.h{height:3px}\
+' + P + 'drop-ind.v{width:3px}\
+[data-ve-dragging]{opacity:.4!important;cursor:grabbing!important}\
+body[data-ve-drag-active]{cursor:grabbing!important;user-select:none!important}\
+body[data-ve-drag-active] *{cursor:grabbing!important}\
 @media (max-width:720px){\
 ' + P + 'toggle{right:16px;bottom:16px;width:46px;height:46px}\
 ' + P + 'toolbar{top:8px;left:8px;right:8px;justify-content:flex-start;max-height:144px;overflow:auto}\
@@ -649,6 +657,7 @@
     dom.fileInput.type = 'file'
     dom.fileInput.accept = 'image/*'
     dom.fileInput.setAttribute('data-ve-ui', '1')
+    dom.dropInd = el('div', PREFIX + '-drop-ind h')
 
     dom.root.appendChild(dom.toolbar)
     dom.root.appendChild(dom.panel)
@@ -656,6 +665,7 @@
     dom.root.appendChild(dom.selOv)
     dom.root.appendChild(dom.toast)
     dom.root.appendChild(dom.fileInput)
+    dom.root.appendChild(dom.dropInd)
     document.body.appendChild(dom.root)
     document.body.appendChild(dom.toggle)
   }
@@ -2023,6 +2033,12 @@
   function onMouseMove(e) {
     if (!state.active) return
     if (state.textEditing) return
+    if (state.dragCandidate && !state.dragging) {
+      var dx = e.clientX - state.dragCandidate.x
+      var dy = e.clientY - state.dragCandidate.y
+      if (Math.sqrt(dx * dx + dy * dy) > 6) startDrag(state.dragCandidate.element, e)
+    }
+    if (state.dragging) { updateDropTarget(e); return }
     var t = e.target
     if (isVE(t)) { hideOv(dom.hoverOv); state.hovered = null; return }
     if (t === state.hovered) return
@@ -2043,6 +2059,120 @@
     }
     e.preventDefault(); e.stopPropagation()
     selectElement(e.target)
+    // Set up drag candidate: if mouse moves > 6px before mouseup, we enter drag mode.
+    if (isDraggableElement(e.target)) {
+      state.dragCandidate = { element: e.target, x: e.clientX, y: e.clientY }
+    }
+  }
+
+  function onMouseUp(e) {
+    if (state.dragging) {
+      finishDrag(e)
+    }
+    state.dragCandidate = null
+  }
+
+  // ========== Drag to Reorder ==========
+
+  function isDraggableElement(node) {
+    if (!node || !node.tagName) return false
+    var tag = node.tagName.toLowerCase()
+    if (['html', 'head', 'body', 'script', 'style'].indexOf(tag) !== -1) return false
+    if (isVE(node)) return false
+    if (!node.parentNode) return false
+    return true
+  }
+
+  function startDrag(element, e) {
+    state.dragging = element
+    element.setAttribute('data-ve-dragging', '1')
+    document.body.setAttribute('data-ve-drag-active', '1')
+    hideOv(dom.hoverOv)
+    updateDropTarget(e)
+  }
+
+  function updateDropTarget(e) {
+    if (!state.dragging) return
+    // Temporarily hide the dragging element so elementFromPoint sees what's behind.
+    var prevPe = state.dragging.style.pointerEvents
+    state.dragging.style.pointerEvents = 'none'
+    var below = document.elementFromPoint(e.clientX, e.clientY)
+    state.dragging.style.pointerEvents = prevPe
+    if (!below || isVE(below) || below === state.dragging || state.dragging.contains(below)) {
+      hideDropIndicator()
+      state.dropTarget = null
+      return
+    }
+    // Walk up if below is inside dragging
+    var target = below
+    while (target && (target === state.dragging || state.dragging.contains(target))) {
+      target = target.parentNode
+    }
+    if (!target || !target.tagName) { hideDropIndicator(); state.dropTarget = null; return }
+    var tag = target.tagName.toLowerCase()
+    if (['html', 'head', 'body'].indexOf(tag) !== -1 || isVE(target)) {
+      hideDropIndicator(); state.dropTarget = null; return
+    }
+    var rect = target.getBoundingClientRect()
+    var midY = rect.top + rect.height / 2
+    var before = e.clientY < midY
+    state.dropTarget = target
+    state.dropBefore = before
+    showDropIndicator(rect, before)
+  }
+
+  function showDropIndicator(rect, before) {
+    var top = before ? rect.top : rect.bottom
+    dom.dropInd.style.display = 'block'
+    dom.dropInd.style.left = Math.max(0, rect.left - 2) + 'px'
+    dom.dropInd.style.top = (top - 1) + 'px'
+    dom.dropInd.style.width = (rect.width + 4) + 'px'
+  }
+
+  function hideDropIndicator() {
+    dom.dropInd.style.display = 'none'
+  }
+
+  function finishDrag(e) {
+    var dragging = state.dragging
+    var target = state.dropTarget
+    var before = state.dropBefore
+    // Clear drag state
+    dragging.removeAttribute('data-ve-dragging')
+    document.body.removeAttribute('data-ve-drag-active')
+    hideDropIndicator()
+    state.dragging = null
+    state.dropTarget = null
+    state.dragCandidate = null
+    if (!target || !target.parentNode) { selectElement(dragging); return }
+    if (dragging.contains(target)) {
+      showToast(t('不能放到自己里面'))
+      selectElement(dragging)
+      return
+    }
+    // Don't move if it's already in the right position
+    var nextSibling = before ? target : target.nextSibling
+    if (dragging === target || dragging === nextSibling) {
+      selectElement(dragging)
+      return
+    }
+    pushHistory('drag-move')
+    target.parentNode.insertBefore(dragging, nextSibling)
+    selectElement(dragging)
+    updateSelOverlay()
+    showToast(t('元素已移动'))
+  }
+
+  function cancelDrag() {
+    if (!state.dragging) return
+    state.dragging.removeAttribute('data-ve-dragging')
+    document.body.removeAttribute('data-ve-drag-active')
+    hideDropIndicator()
+    var dragging = state.dragging
+    state.dragging = null
+    state.dropTarget = null
+    state.dragCandidate = null
+    selectElement(dragging)
   }
 
   function onDoubleClickCapture(e) {
@@ -2128,6 +2258,7 @@
     showToast(t('点击选中元素 · 双击文字直接编辑 · Ctrl 点击触发原页面'), 3000)
     document.addEventListener('mousemove', onMouseMove, true)
     document.addEventListener('mousedown', onMouseDown, true)
+    document.addEventListener('mouseup', onMouseUp, true)
     document.addEventListener('click', onClickCapture, true)
     document.addEventListener('dblclick', onDoubleClickCapture, true)
     window.addEventListener('scroll', onScrollResize, true)
@@ -2136,6 +2267,7 @@
 
   function exitEdit() {
     finishTextEdit()
+    if (state.dragging) cancelDrag()
     state.active = false; state.selected = null; state.hovered = null; state.textFlow = false
     dom.toggle.classList.remove('active')
     dom.toggle.innerHTML = ICON_EDIT
@@ -2148,6 +2280,7 @@
     updateToolbarState()
     document.removeEventListener('mousemove', onMouseMove, true)
     document.removeEventListener('mousedown', onMouseDown, true)
+    document.removeEventListener('mouseup', onMouseUp, true)
     document.removeEventListener('click', onClickCapture, true)
     document.removeEventListener('dblclick', onDoubleClickCapture, true)
     window.removeEventListener('scroll', onScrollResize, true)
@@ -2277,7 +2410,7 @@
   function onKeyDown(e) {
     if (e.altKey && e.key.toLowerCase() === 'e') { e.preventDefault(); toggleEdit(); return }
     if (!state.active) return
-    if (e.key === 'Escape') { e.preventDefault(); state.textEditing ? finishTextEdit() : (state.selected ? deselectElement() : exitEdit()); return }
+    if (e.key === 'Escape') { e.preventDefault(); state.dragging ? cancelDrag() : (state.textEditing ? finishTextEdit() : (state.selected ? deselectElement() : exitEdit())); return }
     if (e.altKey && e.key.toLowerCase() === 't') { e.preventDefault(); toggleTextEdit(); return }
     if (e.altKey && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); return }
     if (e.altKey && e.key.toLowerCase() === 'y') { e.preventDefault(); redo(); return }

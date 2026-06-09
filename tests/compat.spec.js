@@ -773,3 +773,110 @@ test('image replace and crop controls appear and work', async ({ page }) => {
   }, tinyPng)
   await expect(imgEl).toHaveAttribute('src', tinyPng)
 })
+
+test('drag-to-reorder moves an element to a new position', async ({ page }) => {
+  await page.goto(`${baseURL}/index.html`)
+  await page.getByRole('tab', { name: '粘贴代码' }).click()
+  await page.locator('#html-input').fill(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { margin: 0; padding: 100px 40px; font-family: sans-serif; }
+    .item { padding: 24px; margin: 12px 0; background: #f0f0f0; border-radius: 8px; font-size: 18px; }
+    #a { background: #fee; }
+    #b { background: #efe; }
+    #c { background: #eef; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="item" id="a">Item A</div>
+    <div class="item" id="b">Item B</div>
+    <div class="item" id="c">Item C</div>
+  </div>
+</body>
+</html>`)
+
+  await page.locator('#btn-start').click()
+  await ensureEditMode(page)
+
+  // Verify initial order: A, B, C
+  const initialOrder = await page.evaluate(() => {
+    return Array.from(document.querySelectorAll('.item')).map(el => el.id).join(',')
+  })
+  expect(initialOrder).toBe('a,b,c')
+
+  // Drag Item A down past Item B (to become A→B order swap: B, A, C)
+  const itemA = await page.locator('#a').boundingBox()
+  const itemB = await page.locator('#b').boundingBox()
+  // Drag from middle of A to middle of B + a bit below midpoint => insert after B
+  const startX = itemA.x + itemA.width / 2
+  const startY = itemA.y + itemA.height / 2
+  // Target: lower half of B so it inserts after B
+  const endX = itemB.x + itemB.width / 2
+  const endY = itemB.y + itemB.height * 0.75
+
+  await page.mouse.move(startX, startY)
+  await page.mouse.down()
+  // Move past threshold to trigger drag mode
+  await page.mouse.move(startX + 10, startY + 10, { steps: 3 })
+  // Verify drop indicator becomes visible during drag
+  await page.mouse.move(endX, endY, { steps: 5 })
+  await expect(page.locator('.__ve-drop-ind')).toBeVisible()
+  await page.mouse.up()
+
+  // Verify new order: B, A, C
+  const newOrder = await page.evaluate(() => {
+    return Array.from(document.querySelectorAll('.item')).map(el => el.id).join(',')
+  })
+  expect(newOrder).toBe('b,a,c')
+
+  // Verify drop indicator is hidden after drop
+  await expect(page.locator('.__ve-drop-ind')).toBeHidden()
+
+  // Verify undo restores original order
+  await page.keyboard.press('Alt+z')
+  const undoneOrder = await page.evaluate(() => {
+    return Array.from(document.querySelectorAll('.item')).map(el => el.id).join(',')
+  })
+  expect(undoneOrder).toBe('a,b,c')
+})
+
+test('drag-to-reorder cancels with Escape and does not move', async ({ page }) => {
+  await page.goto(`${baseURL}/index.html`)
+  await page.getByRole('tab', { name: '粘贴代码' }).click()
+  await page.locator('#html-input').fill(`<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { margin: 0; padding: 100px 40px; font-family: sans-serif; }
+    .item { padding: 24px; margin: 12px 0; background: #f0f0f0; }
+  </style>
+</head>
+<body>
+  <div class="item" id="x">X</div>
+  <div class="item" id="y">Y</div>
+</body>
+</html>`)
+
+  await page.locator('#btn-start').click()
+  await ensureEditMode(page)
+
+  const itemX = await page.locator('#x').boundingBox()
+  const itemY = await page.locator('#y').boundingBox()
+
+  await page.mouse.move(itemX.x + itemX.width / 2, itemX.y + itemX.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(itemY.x + itemY.width / 2, itemY.y + itemY.height * 0.8, { steps: 5 })
+  // Cancel with Esc
+  await page.keyboard.press('Escape')
+  await page.mouse.up()
+
+  // Order should be unchanged
+  const order = await page.evaluate(() => {
+    return Array.from(document.querySelectorAll('.item')).map(el => el.id).join(',')
+  })
+  expect(order).toBe('x,y')
+  await expect(page.locator('.__ve-drop-ind')).toBeHidden()
+})
