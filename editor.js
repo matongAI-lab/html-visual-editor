@@ -2131,35 +2131,100 @@ body[data-ve-drag-active] *{cursor:grabbing!important}\
     state.dragging.style.pointerEvents = 'none'
     var below = document.elementFromPoint(e.clientX, e.clientY)
     state.dragging.style.pointerEvents = prevPe
-    if (!below || isVE(below) || below === state.dragging || state.dragging.contains(below)) {
-      hideDropIndicator()
-      state.dropTarget = null
-      return
+    if (!below || isVE(below)) {
+      // Cursor is outside the page. Use sibling fallback so a drop indicator
+      // is still shown somewhere reasonable.
+      siblingFallback(e); return
     }
-    // Walk up if below is inside dragging
+    // If cursor is on the dragging element or its descendants, fall back to
+    // sibling-position logic so users can still see where it would land.
+    if (below === state.dragging || state.dragging.contains(below)) {
+      siblingFallback(e); return
+    }
+    // Walk up if below is inside dragging (defensive — shouldn't usually hit).
     var target = below
     while (target && (target === state.dragging || state.dragging.contains(target))) {
       target = target.parentNode
     }
-    if (!target || !target.tagName) { hideDropIndicator(); state.dropTarget = null; return }
+    if (!target || !target.tagName) { siblingFallback(e); return }
     var tag = target.tagName.toLowerCase()
     if (['html', 'head', 'body'].indexOf(tag) !== -1 || isVE(target)) {
-      hideDropIndicator(); state.dropTarget = null; return
+      siblingFallback(e); return
     }
-    var rect = target.getBoundingClientRect()
-    var midY = rect.top + rect.height / 2
-    var before = e.clientY < midY
-    state.dropTarget = target
-    state.dropBefore = before
-    showDropIndicator(rect, before)
+    setDropTarget(target, e)
   }
 
-  function showDropIndicator(rect, before) {
-    var top = before ? rect.top : rect.bottom
+  function setDropTarget(target, e) {
+    var rect = target.getBoundingClientRect()
+    // Detect orientation: if siblings are arranged in a row (similar tops),
+    // use x to decide before/after; otherwise default to y.
+    var parent = target.parentNode
+    var horizontal = false
+    if (parent) {
+      var sibs = parent.children
+      if (sibs && sibs.length > 1) {
+        var first = sibs[0].getBoundingClientRect()
+        var second = sibs[1].getBoundingClientRect()
+        if (Math.abs(first.top - second.top) < 10 && Math.abs(first.left - second.left) > 10) {
+          horizontal = true
+        }
+      }
+    }
+    var before
+    if (horizontal) {
+      before = e.clientX < rect.left + rect.width / 2
+    } else {
+      before = e.clientY < rect.top + rect.height / 2
+    }
+    state.dropTarget = target
+    state.dropBefore = before
+    state.dropHorizontal = horizontal
+    showDropIndicator(rect, before, horizontal)
+  }
+
+  function siblingFallback(e) {
+    // When cursor is over the dragging element or off-page, find the closest
+    // sibling within the dragging's parent and use it as a drop target hint.
+    var dragging = state.dragging
+    if (!dragging || !dragging.parentNode) { hideDropIndicator(); state.dropTarget = null; return }
+    var parent = dragging.parentNode
+    var children = []
+    for (var i = 0; i < parent.children.length; i++) {
+      var ch = parent.children[i]
+      if (ch !== dragging && !isVE(ch)) children.push(ch)
+    }
+    if (!children.length) { hideDropIndicator(); state.dropTarget = null; return }
+    var best = null
+    var bestDist = Infinity
+    for (var j = 0; j < children.length; j++) {
+      var r = children[j].getBoundingClientRect()
+      var cx = r.left + r.width / 2
+      var cy = r.top + r.height / 2
+      var dx = e.clientX - cx, dy = e.clientY - cy
+      var d = dx * dx + dy * dy
+      if (d < bestDist) { bestDist = d; best = children[j] }
+    }
+    if (!best) { hideDropIndicator(); state.dropTarget = null; return }
+    setDropTarget(best, e)
+  }
+
+  function showDropIndicator(rect, before, horizontal) {
     dom.dropInd.style.display = 'block'
-    dom.dropInd.style.left = Math.max(0, rect.left - 2) + 'px'
-    dom.dropInd.style.top = (top - 1) + 'px'
-    dom.dropInd.style.width = (rect.width + 4) + 'px'
+    if (horizontal) {
+      dom.dropInd.className = PREFIX + '-drop-ind v'
+      var left = before ? rect.left : rect.right
+      dom.dropInd.style.left = (left - 1) + 'px'
+      dom.dropInd.style.top = Math.max(0, rect.top - 2) + 'px'
+      dom.dropInd.style.width = ''
+      dom.dropInd.style.height = (rect.height + 4) + 'px'
+    } else {
+      dom.dropInd.className = PREFIX + '-drop-ind h'
+      var top = before ? rect.top : rect.bottom
+      dom.dropInd.style.left = Math.max(0, rect.left - 2) + 'px'
+      dom.dropInd.style.top = (top - 1) + 'px'
+      dom.dropInd.style.width = (rect.width + 4) + 'px'
+      dom.dropInd.style.height = ''
+    }
   }
 
   function hideDropIndicator() {
