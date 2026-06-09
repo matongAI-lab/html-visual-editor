@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.4.0 — 2026-06-09
+
+### New Features
+
+- **Image replace from local file**: selecting an `<img>` now shows a Replace Image button in the content panel. Picking a local image converts it to a base64 data URL so the exported HTML is self-contained.
+- **Image cropping (object-fit)**: new selector for `cover` / `contain` / `fill` / `none` / `scale-down`, applied as an inline style so it survives export.
+- **Image focal point (object-position)**: a 3×3 visual grid lets users snap the visible region to any of 9 canonical positions without typing CSS.
+- **Drag-to-reorder elements**: a new "👆 拖拽 / Drag" toolbar mode (Alt+D) lets users hold any element and drag it into a new DOM position. A blue indicator line shows where the element will land. Supports both vertical stacks (horizontal indicator) and horizontal rows (vertical indicator), auto-detected from sibling layout.
+- **Sibling fallback for drag indicator**: when the cursor is over the dragged element itself (common for full-width blocks), the indicator now snaps to the nearest sibling instead of disappearing.
+
+### UI Changes
+
+- **Mode toggles get emoji icons** for quicker visual scanning: 🎨 版式, ✏️ 文字, 👆 拖拽.
+- **Action buttons become single-color SVG icons**: 撤销 (↶), 复原 (↷), 重新载入 (⟲). Page navigation (上一页 / 下一页) stays text-only on purpose since the page indicator beside them already provides spatial context.
+- **Edit-text and drag modes are mutually exclusive**: turning one on automatically turns the other off, so users always know which click behavior is active.
+
+### Bug Fixes
+
+- **Drop indicator was hiding for large elements**: `updateDropTarget` bailed out when the cursor was inside the dragging element's bounding box. Now it falls back to a sibling-based drop position so the indicator stays visible.
+
+### Testing
+
+- Added regression coverage for image replace + crop controls, drag-to-reorder direction detection, mutual exclusivity of edit-text and drag modes, and the no-op behavior when drag mode is off. Total: 22 Chromium tests, all green.
+
 ## 0.3.2 — 2026-06-06
 
 ### Changed
