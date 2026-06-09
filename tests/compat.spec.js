@@ -801,6 +801,10 @@ test('drag-to-reorder moves an element to a new position', async ({ page }) => {
   await page.locator('#btn-start').click()
   await ensureEditMode(page)
 
+  // Enter drag mode (required to enable dragging)
+  await page.locator('[data-ve-action="drag-move"]').click()
+  await expect(page.locator('[data-ve-action="drag-move"]')).toHaveClass(/active/)
+
   // Verify initial order: A, B, C
   const initialOrder = await page.evaluate(() => {
     return Array.from(document.querySelectorAll('.item')).map(el => el.id).join(',')
@@ -863,6 +867,9 @@ test('drag-to-reorder cancels with Escape and does not move', async ({ page }) =
   await page.locator('#btn-start').click()
   await ensureEditMode(page)
 
+  // Enter drag mode
+  await page.locator('[data-ve-action="drag-move"]').click()
+
   const itemX = await page.locator('#x').boundingBox()
   const itemY = await page.locator('#y').boundingBox()
 
@@ -879,4 +886,70 @@ test('drag-to-reorder cancels with Escape and does not move', async ({ page }) =
   })
   expect(order).toBe('x,y')
   await expect(page.locator('.__ve-drop-ind')).toBeHidden()
+})
+
+test('drag mode is mutually exclusive with text edit mode', async ({ page }) => {
+  await page.goto(`${baseURL}/index.html`)
+  await page.getByRole('tab', { name: '粘贴代码' }).click()
+  await page.locator('#html-input').fill(`<!DOCTYPE html>
+<html>
+<head><style>body { padding: 100px; font-family: sans-serif; }</style></head>
+<body><p>Hello</p></body>
+</html>`)
+
+  await page.locator('#btn-start').click()
+  await ensureEditMode(page)
+
+  const textBtn = page.locator('[data-ve-action="edit-text"]')
+  const dragBtn = page.locator('[data-ve-action="drag-move"]')
+
+  // Turn on text edit
+  await textBtn.click()
+  await expect(textBtn).toHaveClass(/active/)
+  await expect(dragBtn).not.toHaveClass(/active/)
+
+  // Turn on drag mode → should turn off text edit automatically
+  await dragBtn.click()
+  await expect(dragBtn).toHaveClass(/active/)
+  await expect(textBtn).not.toHaveClass(/active/)
+
+  // Turn on text edit again → should turn off drag mode
+  await textBtn.click()
+  await expect(textBtn).toHaveClass(/active/)
+  await expect(dragBtn).not.toHaveClass(/active/)
+})
+
+test('elements do not drag when drag mode is off', async ({ page }) => {
+  await page.goto(`${baseURL}/index.html`)
+  await page.getByRole('tab', { name: '粘贴代码' }).click()
+  await page.locator('#html-input').fill(`<!DOCTYPE html>
+<html>
+<head><style>
+  body { margin: 0; padding: 100px 40px; font-family: sans-serif; }
+  .item { padding: 24px; margin: 12px 0; background: #f0f0f0; }
+</style></head>
+<body>
+  <div class="item" id="p">P</div>
+  <div class="item" id="q">Q</div>
+</body>
+</html>`)
+
+  await page.locator('#btn-start').click()
+  await ensureEditMode(page)
+  // Drag mode is OFF by default
+
+  const itemP = await page.locator('#p').boundingBox()
+  const itemQ = await page.locator('#q').boundingBox()
+
+  // Try to drag P past Q
+  await page.mouse.move(itemP.x + itemP.width / 2, itemP.y + itemP.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(itemQ.x + itemQ.width / 2, itemQ.y + itemQ.height * 0.8, { steps: 5 })
+  await page.mouse.up()
+
+  // Order should NOT change because drag mode is off
+  const order = await page.evaluate(() => {
+    return Array.from(document.querySelectorAll('.item')).map(el => el.id).join(',')
+  })
+  expect(order).toBe('p,q')
 })

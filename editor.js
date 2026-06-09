@@ -6,7 +6,7 @@
   var EASE = 'cubic-bezier(.4,0,.2,1)'
   var EASE_OUT = 'cubic-bezier(0,.7,.3,1)'
 
-  var state = { active: false, selected: null, hovered: null, textEditing: null, textFlow: false, history: [], future: [], pages: [], pageMode: 'scroll', currentPage: 0, restoring: false, layoutOpen: false, dragging: null, dragCandidate: null, dropTarget: null, dropBefore: false }
+  var state = { active: false, selected: null, hovered: null, textEditing: null, textFlow: false, dragMode: false, history: [], future: [], pages: [], pageMode: 'scroll', currentPage: 0, restoring: false, layoutOpen: false, dragging: null, dragCandidate: null, dropTarget: null, dropBefore: false }
   var dom = {}
 
   function each(list, fn) { Array.prototype.forEach.call(list, fn) }
@@ -70,6 +70,8 @@
     '图片已替换': 'Image replaced',
     '元素已移动': 'Element moved', '按住拖动到新位置': 'Hold and drag to reorder',
     '不能放到自己里面': 'Cannot drop into itself',
+    '拖拽移动': 'Drag Move', '按住元素拖动可改顺序 (Alt+D)': 'Hold and drag elements to reorder (Alt+D)',
+    '拖拽模式已开启': 'Drag mode on', '拖拽模式已关闭': 'Drag mode off',
     '当前窗口打开': 'Same Tab', '新窗口打开': 'New Tab',
     '样式面板': 'Style Panel', '未选择': 'None',
     '进入编辑模式后，点击页面里的标题、段落、卡片或按钮开始调整。': 'Enter edit mode, then click any element to start.',
@@ -424,6 +426,8 @@
 ' + P + 'drop-ind.h{height:3px}\
 ' + P + 'drop-ind.v{width:3px}\
 [data-ve-dragging]{opacity:.4!important;cursor:grabbing!important}\
+body[data-ve-drag-mode]{cursor:grab!important}\
+body[data-ve-drag-mode] *:not(#' + PREFIX + '-root):not(#' + PREFIX + '-root *){cursor:grab!important}\
 body[data-ve-drag-active]{cursor:grabbing!important;user-select:none!important}\
 body[data-ve-drag-active] *{cursor:grabbing!important}\
 @media (max-width:720px){\
@@ -610,6 +614,8 @@ body[data-ve-drag-active] *{cursor:grabbing!important}\
     dom.layoutBtn.addEventListener('click', toggleLayoutPanel)
     dom.textBtn = el('button', PREFIX + '-tb-btn', { text: t('编辑文字'), title: t('点击页面文字直接编辑 (Alt+T)'), 'data-ve-action': 'edit-text' })
     dom.textBtn.addEventListener('click', toggleTextEdit)
+    dom.dragBtn = el('button', PREFIX + '-tb-btn', { text: t('拖拽移动'), title: t('按住元素拖动可改顺序 (Alt+D)'), 'data-ve-action': 'drag-move' })
+    dom.dragBtn.addEventListener('click', toggleDragMode)
     dom.undoBtn = el('button', PREFIX + '-tb-btn', { text: t('撤销'), title: t('撤销上一步 (Alt+Z)'), 'data-ve-action': 'undo' })
     dom.undoBtn.addEventListener('click', undo)
     dom.redoBtn = el('button', PREFIX + '-tb-btn', { text: t('复原'), title: t('复原刚刚撤销的操作 (Alt+Y)'), 'data-ve-action': 'redo' })
@@ -632,6 +638,7 @@ body[data-ve-drag-active] *{cursor:grabbing!important}\
     leftGroup.appendChild(dom.breadcrumb)
     mainGroup.appendChild(dom.layoutBtn)
     mainGroup.appendChild(dom.textBtn)
+    mainGroup.appendChild(dom.dragBtn)
     mainGroup.appendChild(dom.undoBtn)
     mainGroup.appendChild(dom.redoBtn)
     mainGroup.appendChild(dom.pager)
@@ -1407,6 +1414,7 @@ body[data-ve-drag-active] *{cursor:grabbing!important}\
     if (dom.undoBtn) dom.undoBtn.disabled = state.history.length === 0
     if (dom.redoBtn) dom.redoBtn.disabled = state.future.length === 0
     if (dom.textBtn) dom.textBtn.classList.toggle('active', state.textFlow)
+    if (dom.dragBtn) dom.dragBtn.classList.toggle('active', state.dragMode)
     if (dom.layoutBtn) {
       dom.layoutBtn.classList.toggle('active', state.layoutOpen)
       dom.layoutBtn.disabled = false
@@ -1424,6 +1432,12 @@ body[data-ve-drag-active] *{cursor:grabbing!important}\
   function toggleTextEdit() {
     if (!state.active) return
     state.textFlow = !state.textFlow
+    if (state.textFlow && state.dragMode) {
+      // Text edit and drag mode are mutually exclusive.
+      state.dragMode = false
+      if (state.dragging) cancelDrag()
+      document.body.removeAttribute('data-ve-drag-mode')
+    }
     updateToolbarState()
     if (state.textFlow && state.selected && isTextEditable(state.selected)) {
       startTextEdit()
@@ -1431,6 +1445,22 @@ body[data-ve-drag-active] *{cursor:grabbing!important}\
     }
     if (!state.textFlow && state.textEditing) finishTextEdit()
     showToast(state.textFlow ? t('文字编辑已开启') : t('文字编辑已关闭'))
+  }
+
+  function toggleDragMode() {
+    if (!state.active) return
+    state.dragMode = !state.dragMode
+    if (state.dragMode) {
+      // Mutually exclusive with text editing.
+      if (state.textFlow) state.textFlow = false
+      if (state.textEditing) finishTextEdit()
+      document.body.setAttribute('data-ve-drag-mode', '1')
+    } else {
+      if (state.dragging) cancelDrag()
+      document.body.removeAttribute('data-ve-drag-mode')
+    }
+    updateToolbarState()
+    showToast(state.dragMode ? t('拖拽模式已开启') : t('拖拽模式已关闭'))
   }
 
   function isTextEditable(target) {
@@ -2051,6 +2081,13 @@ body[data-ve-drag-active] *{cursor:grabbing!important}\
     if (isVE(e.target)) return
     if (state.textEditing && (e.target === state.textEditing || state.textEditing.contains(e.target))) return
     if (e.ctrlKey || e.altKey) return // Ctrl/Alt+click passes through to page
+    // Drag mode: any mousedown on a draggable element starts a drag candidate.
+    if (state.dragMode && isDraggableElement(e.target)) {
+      e.preventDefault(); e.stopPropagation()
+      selectElement(e.target)
+      state.dragCandidate = { element: e.target, x: e.clientX, y: e.clientY }
+      return
+    }
     var textTarget = secondClickTextTarget(e.target)
     if (textTarget) {
       e.preventDefault(); e.stopPropagation()
@@ -2059,10 +2096,6 @@ body[data-ve-drag-active] *{cursor:grabbing!important}\
     }
     e.preventDefault(); e.stopPropagation()
     selectElement(e.target)
-    // Set up drag candidate: if mouse moves > 6px before mouseup, we enter drag mode.
-    if (isDraggableElement(e.target)) {
-      state.dragCandidate = { element: e.target, x: e.clientX, y: e.clientY }
-    }
   }
 
   function onMouseUp(e) {
@@ -2268,7 +2301,8 @@ body[data-ve-drag-active] *{cursor:grabbing!important}\
   function exitEdit() {
     finishTextEdit()
     if (state.dragging) cancelDrag()
-    state.active = false; state.selected = null; state.hovered = null; state.textFlow = false
+    document.body.removeAttribute('data-ve-drag-mode')
+    state.active = false; state.selected = null; state.hovered = null; state.textFlow = false; state.dragMode = false
     dom.toggle.classList.remove('active')
     dom.toggle.innerHTML = ICON_EDIT
     dom.toggle.title = t('切换编辑模式 (Alt+E)')
@@ -2412,6 +2446,7 @@ body[data-ve-drag-active] *{cursor:grabbing!important}\
     if (!state.active) return
     if (e.key === 'Escape') { e.preventDefault(); state.dragging ? cancelDrag() : (state.textEditing ? finishTextEdit() : (state.selected ? deselectElement() : exitEdit())); return }
     if (e.altKey && e.key.toLowerCase() === 't') { e.preventDefault(); toggleTextEdit(); return }
+    if (e.altKey && e.key.toLowerCase() === 'd') { e.preventDefault(); toggleDragMode(); return }
     if (e.altKey && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); return }
     if (e.altKey && e.key.toLowerCase() === 'y') { e.preventDefault(); redo(); return }
     if (e.altKey && e.key === 'ArrowLeft' && hasUsablePager()) { e.preventDefault(); goPage(-1); return }
