@@ -6,7 +6,7 @@
   var EASE = 'cubic-bezier(.4,0,.2,1)'
   var EASE_OUT = 'cubic-bezier(0,.7,.3,1)'
 
-  var state = { active: false, selected: null, hovered: null, textEditing: null, textFlow: false, history: [], future: [], pages: [], pageMode: 'scroll', currentPage: 0, restoring: false, layoutOpen: false }
+  var state = { active: false, selected: null, hovered: null, textEditing: null, textFlow: false, dragMode: false, history: [], future: [], pages: [], pageMode: 'scroll', currentPage: 0, restoring: false, layoutOpen: false, dragging: null, dragCandidate: null, dropTarget: null, dropBefore: false }
   var dom = {}
 
   function each(list, fn) { Array.prototype.forEach.call(list, fn) }
@@ -19,6 +19,10 @@
 
   var ICON_EDIT = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>'
   var ICON_X = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
+  // 14px action icons, single-color, fits the dark toolbar.
+  var ICON_UNDO = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-15-6.7L3 13"/></svg>'
+  var ICON_REDO = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 15-6.7L21 13"/></svg>'
+  var ICON_RELOAD = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>'
 
   // ========== i18n ==========
   var LANG = /^zh\b/i.test((typeof navigator !== 'undefined' ? navigator.language : 'en') || 'en') ? 'zh' : 'en'
@@ -65,10 +69,18 @@
     '当前区块：': 'Block: ', '当前区块：未识别': 'Block: None',
     '选中区块': 'Select', '复制区块': 'Copy', '上移区块': 'Move Up', '下移区块': 'Move Down', '删除区块': 'Delete',
     '内容属性：': 'Content: ', '文字内容': 'Text Content', '直接编辑文字': 'Edit Text Directly', '链接文字': 'Link Text', '按钮文字': 'Button Text', '图片地址 src': 'Image URL', '图片 alt': 'Image Alt',
+    '替换图片': 'Replace Image', '图片裁切': 'Image Fit', '图片位置': 'Image Position',
+    'cover 填满裁切': 'cover', 'contain 完整显示': 'contain', 'fill 拉伸填充': 'fill', 'none 原始大小': 'none', 'scale-down 自动缩小': 'scale-down',
+    '图片已替换': 'Image replaced',
+    '元素已移动': 'Element moved', '按住拖动到新位置': 'Hold and drag to reorder',
+    '不能放到自己里面': 'Cannot drop into itself',
+    '拖拽移动': 'Drag Move', '按住元素拖动可改顺序 (Alt+D)': 'Hold and drag elements to reorder (Alt+D)',
+    '拖拽模式已开启': 'Drag mode on', '拖拽模式已关闭': 'Drag mode off',
     '当前窗口打开': 'Same Tab', '新窗口打开': 'New Tab',
     '样式面板': 'Style Panel', '未选择': 'None',
     '进入编辑模式后，点击页面里的标题、段落、卡片或按钮开始调整。': 'Enter edit mode, then click any element to start.',
     '编辑版式': 'Edit Layout', '编辑文字': 'Edit Text', '撤销': 'Undo', '复原': 'Redo',
+    '🎨 版式': '🎨 Layout', '✏️ 文字': '✏️ Text', '👆 拖拽': '👆 Drag',
     '上一页': 'Prev', '下一页': 'Next', '重新载入': 'Reload',
     '复制 HTML': 'Copy HTML', '保存 HTML': 'Save HTML',
     '切换编辑模式 (Alt+E)': 'Toggle edit mode (Alt+E)',
@@ -317,6 +329,8 @@
 ' + P + 'tb-btn.primary:hover{background:#1d4ed8;box-shadow:0 8px 18px rgba(37,99,235,.28)}\
 ' + P + 'tb-btn.primary:active{background:#1e40af}\
 ' + P + 'tb-btn:disabled{opacity:.32;cursor:default;transform:none!important;box-shadow:none!important}\
+' + P + 'tb-btn.icon{width:32px;padding:0;display:inline-flex;align-items:center;justify-content:center}\
+' + P + 'tb-btn.icon svg{display:block}\
 ' + P + 'tb-btn.exit{background:transparent;border:none;color:#94a3b8;padding:0 8px;font-size:16px;transition:color .15s ' + EASE + ',transform .15s ' + EASE + '}\
 ' + P + 'tb-btn.exit:hover{color:#fff;transform:scale(1.15)}\
 ' + P + 'tb-btn.exit:active{transform:scale(0.9);transition-duration:.08s}\
@@ -410,6 +424,19 @@
 ' + P + 'tree-tag{font-family:"SF Mono",Monaco,Consolas,monospace;color:#93c5fd}\
 ' + P + 'tree-item.muted ' + P + 'tree-tag{color:#64748b}\
 ' + P + 'tree-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#94a3b8}\
+' + P + 'pos-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px;width:90px}\
+' + P + 'pos-cell{width:26px;height:26px;border-radius:5px;border:1px solid rgba(148,163,184,.18);background:rgba(255,255,255,.045);cursor:pointer;transition:all .15s ' + EASE + ';padding:0}\
+' + P + 'pos-cell:hover{background:rgba(255,255,255,.09);border-color:rgba(148,163,184,.3)}\
+' + P + 'pos-cell.active{background:#2563eb;border-color:#3b82f6}\
+' + P + 'file-input{display:none}\
+' + P + 'drop-ind{position:fixed;background:#60a5fa;border-radius:2px;box-shadow:0 0 8px rgba(96,165,250,.6);pointer-events:none;z-index:' + (Z + 6) + ';display:none;transition:none}\
+' + P + 'drop-ind.h{height:3px}\
+' + P + 'drop-ind.v{width:3px}\
+[data-ve-dragging]{opacity:.4!important;cursor:grabbing!important}\
+body[data-ve-drag-mode]{cursor:grab!important}\
+body[data-ve-drag-mode] *:not(#' + PREFIX + '-root):not(#' + PREFIX + '-root *){cursor:grab!important}\
+body[data-ve-drag-active]{cursor:grabbing!important;user-select:none!important}\
+body[data-ve-drag-active] *{cursor:grabbing!important}\
 @media (max-width:720px){\
 ' + P + 'toggle{right:16px;bottom:16px;width:46px;height:46px}\
 ' + P + 'toolbar{top:8px;left:8px;right:8px;justify-content:flex-start;max-height:144px;overflow:auto}\
@@ -512,6 +539,11 @@
 
   function cs(el, prop) { return getComputedStyle(el)[prop] }
   function round(v) { return Math.round(v * 100) / 100 }
+  function normalizePos(v) {
+    var map = { left: '0%', center: '50%', right: '100%', top: '0%', bottom: '100%' }
+    var parts = (v || '50% 50%').trim().split(/\s+/)
+    return parts.map(function (p) { return map[p] || p }).join(' ')
+  }
 
   function showToast(msg, ms) {
     dom.toast.textContent = msg
@@ -585,13 +617,15 @@
     copyBtn.addEventListener('click', copyHTML)
     var dlBtn = el('button', PREFIX + '-tb-btn primary', { text: t('保存 HTML'), title: t('保存 HTML'), 'data-ve-action': 'download-html' })
     dlBtn.addEventListener('click', downloadHTML)
-    dom.layoutBtn = el('button', PREFIX + '-tb-btn', { text: t('编辑版式'), title: t('打开/关闭版式编辑'), 'data-ve-action': 'toggle-layout' })
+    dom.layoutBtn = el('button', PREFIX + '-tb-btn', { text: t('🎨 版式'), title: t('打开/关闭版式编辑'), 'data-ve-action': 'toggle-layout' })
     dom.layoutBtn.addEventListener('click', toggleLayoutPanel)
-    dom.textBtn = el('button', PREFIX + '-tb-btn', { text: t('编辑文字'), title: t('点击页面文字直接编辑 (Alt+T)'), 'data-ve-action': 'edit-text' })
+    dom.textBtn = el('button', PREFIX + '-tb-btn', { text: t('✏️ 文字'), title: t('点击页面文字直接编辑 (Alt+T)'), 'data-ve-action': 'edit-text' })
     dom.textBtn.addEventListener('click', toggleTextEdit)
-    dom.undoBtn = el('button', PREFIX + '-tb-btn', { text: t('撤销'), title: t('撤销上一步 (Alt+Z)'), 'data-ve-action': 'undo' })
+    dom.dragBtn = el('button', PREFIX + '-tb-btn', { text: t('👆 拖拽'), title: t('按住元素拖动可改顺序 (Alt+D)'), 'data-ve-action': 'drag-move' })
+    dom.dragBtn.addEventListener('click', toggleDragMode)
+    dom.undoBtn = el('button', PREFIX + '-tb-btn icon', { html: ICON_UNDO, title: t('撤销上一步 (Alt+Z)'), 'data-ve-action': 'undo' })
     dom.undoBtn.addEventListener('click', undo)
-    dom.redoBtn = el('button', PREFIX + '-tb-btn', { text: t('复原'), title: t('复原刚刚撤销的操作 (Alt+Y)'), 'data-ve-action': 'redo' })
+    dom.redoBtn = el('button', PREFIX + '-tb-btn icon', { html: ICON_REDO, title: t('复原刚刚撤销的操作 (Alt+Y)'), 'data-ve-action': 'redo' })
     dom.redoBtn.addEventListener('click', redo)
     dom.pager = el('div', PREFIX + '-pager')
     dom.prevPageBtn = el('button', PREFIX + '-tb-btn', { text: t('上一页'), title: t('切换到上一页 (Alt+←)'), 'data-ve-action': 'prev-page' })
@@ -602,7 +636,7 @@
     dom.pager.appendChild(dom.prevPageBtn)
     dom.pager.appendChild(dom.pageLabel)
     dom.pager.appendChild(dom.nextPageBtn)
-    var reloadBtn = el('button', PREFIX + '-tb-btn', { text: t('重新载入'), title: t('重新载入当前文件/入口页'), 'data-ve-action': 'reload' })
+    var reloadBtn = el('button', PREFIX + '-tb-btn icon', { html: ICON_RELOAD, title: t('重新载入当前文件/入口页'), 'data-ve-action': 'reload' })
     reloadBtn.addEventListener('click', reloadPage)
     var leftGroup = el('div', PREFIX + '-tb-group')
     var mainGroup = el('div', PREFIX + '-tb-group main')
@@ -611,6 +645,7 @@
     leftGroup.appendChild(dom.breadcrumb)
     mainGroup.appendChild(dom.layoutBtn)
     mainGroup.appendChild(dom.textBtn)
+    mainGroup.appendChild(dom.dragBtn)
     mainGroup.appendChild(dom.undoBtn)
     mainGroup.appendChild(dom.redoBtn)
     mainGroup.appendChild(dom.pager)
@@ -632,12 +667,19 @@
     dom.selOv.appendChild(el('span', PREFIX + '-ov-tag'))
 
     dom.toast = el('div', PREFIX + '-toast')
+    dom.fileInput = el('input', PREFIX + '-file-input')
+    dom.fileInput.type = 'file'
+    dom.fileInput.accept = 'image/*'
+    dom.fileInput.setAttribute('data-ve-ui', '1')
+    dom.dropInd = el('div', PREFIX + '-drop-ind h')
 
     dom.root.appendChild(dom.toolbar)
     dom.root.appendChild(dom.panel)
     dom.root.appendChild(dom.hoverOv)
     dom.root.appendChild(dom.selOv)
     dom.root.appendChild(dom.toast)
+    dom.root.appendChild(dom.fileInput)
+    dom.root.appendChild(dom.dropInd)
     document.body.appendChild(dom.root)
     document.body.appendChild(dom.toggle)
   }
@@ -903,6 +945,65 @@
     } else if (tag === 'img') {
       grid.appendChild(renderContentInput(t('图片地址 src'), editable.getAttribute('src') || '', function (value) { applyAttribute(editable, 'src', value); updateSelOverlay() }))
       grid.appendChild(renderContentInput(t('图片 alt'), editable.getAttribute('alt') || '', function (value) { applyAttribute(editable, 'alt', value) }))
+      // Replace image from local file
+      grid.appendChild(renderContentAction(t('替换图片'), function () {
+        dom.fileInput.value = ''
+        dom.fileInput.onchange = function () {
+          var file = dom.fileInput.files && dom.fileInput.files[0]
+          if (!file || file.type.indexOf('image/') !== 0) return
+          var reader = new FileReader()
+          reader.onload = function () {
+            applyAttribute(editable, 'src', reader.result)
+            updateSelOverlay()
+            showToast(t('图片已替换'))
+            renderPanel()
+          }
+          reader.readAsDataURL(file)
+        }
+        dom.fileInput.click()
+      }))
+      // object-fit selector
+      var fitWrap = el('div', null)
+      fitWrap.appendChild(el('div', PREFIX + '-content-label', { text: t('图片裁切') }))
+      var fitSel = el('select', PREFIX + '-select')
+      var currentFit = editable.style.objectFit || cs(editable, 'objectFit') || 'fill'
+      ;[
+        { value: 'cover', label: t('cover 填满裁切') },
+        { value: 'contain', label: t('contain 完整显示') },
+        { value: 'fill', label: t('fill 拉伸填充') },
+        { value: 'none', label: t('none 原始大小') },
+        { value: 'scale-down', label: t('scale-down 自动缩小') }
+      ].forEach(function (opt) {
+        var o = el('option', null, { text: opt.label })
+        o.value = opt.value
+        if (opt.value === currentFit) o.selected = true
+        fitSel.appendChild(o)
+      })
+      fitSel.addEventListener('change', function () { applyStyle('objectFit', fitSel.value) })
+      fitWrap.appendChild(fitSel)
+      grid.appendChild(fitWrap)
+      // object-position 3x3 grid
+      var posWrap = el('div', null)
+      posWrap.appendChild(el('div', PREFIX + '-content-label', { text: t('图片位置') }))
+      var posGrid = el('div', PREFIX + '-pos-grid')
+      var currentPos = normalizePos(editable.style.objectPosition || cs(editable, 'objectPosition'))
+      var positions = [
+        'left top', 'center top', 'right top',
+        'left center', 'center center', 'right center',
+        'left bottom', 'center bottom', 'right bottom'
+      ]
+      positions.forEach(function (pos) {
+        var cell = el('button', PREFIX + '-pos-cell', { type: 'button' })
+        if (normalizePos(pos) === currentPos) cell.classList.add('active')
+        cell.addEventListener('click', function () {
+          each(posGrid.querySelectorAll('.' + PREFIX + '-pos-cell'), function (c) { c.classList.remove('active') })
+          cell.classList.add('active')
+          applyStyle('objectPosition', pos)
+        })
+        posGrid.appendChild(cell)
+      })
+      posWrap.appendChild(posGrid)
+      grid.appendChild(posWrap)
     } else if (isPlainTextTarget(editable)) {
       grid.appendChild(renderContentInput(t('文字内容'), editable.textContent || '', function (value) { applyTextContent(editable, value) }))
     } else {
@@ -1320,6 +1421,7 @@
     if (dom.undoBtn) dom.undoBtn.disabled = state.history.length === 0
     if (dom.redoBtn) dom.redoBtn.disabled = state.future.length === 0
     if (dom.textBtn) dom.textBtn.classList.toggle('active', state.textFlow)
+    if (dom.dragBtn) dom.dragBtn.classList.toggle('active', state.dragMode)
     if (dom.layoutBtn) {
       dom.layoutBtn.classList.toggle('active', state.layoutOpen)
       dom.layoutBtn.disabled = false
@@ -1337,6 +1439,12 @@
   function toggleTextEdit() {
     if (!state.active) return
     state.textFlow = !state.textFlow
+    if (state.textFlow && state.dragMode) {
+      // Text edit and drag mode are mutually exclusive.
+      state.dragMode = false
+      if (state.dragging) cancelDrag()
+      document.body.removeAttribute('data-ve-drag-mode')
+    }
     updateToolbarState()
     if (state.textFlow && state.selected && isTextEditable(state.selected)) {
       startTextEdit()
@@ -1344,6 +1452,22 @@
     }
     if (!state.textFlow && state.textEditing) finishTextEdit()
     showToast(state.textFlow ? t('文字编辑已开启') : t('文字编辑已关闭'))
+  }
+
+  function toggleDragMode() {
+    if (!state.active) return
+    state.dragMode = !state.dragMode
+    if (state.dragMode) {
+      // Mutually exclusive with text editing.
+      if (state.textFlow) state.textFlow = false
+      if (state.textEditing) finishTextEdit()
+      document.body.setAttribute('data-ve-drag-mode', '1')
+    } else {
+      if (state.dragging) cancelDrag()
+      document.body.removeAttribute('data-ve-drag-mode')
+    }
+    updateToolbarState()
+    showToast(state.dragMode ? t('拖拽模式已开启') : t('拖拽模式已关闭'))
   }
 
   function isTextEditable(target) {
@@ -1946,6 +2070,12 @@
   function onMouseMove(e) {
     if (!state.active) return
     if (state.textEditing) return
+    if (state.dragCandidate && !state.dragging) {
+      var dx = e.clientX - state.dragCandidate.x
+      var dy = e.clientY - state.dragCandidate.y
+      if (Math.sqrt(dx * dx + dy * dy) > 6) startDrag(state.dragCandidate.element, e)
+    }
+    if (state.dragging) { updateDropTarget(e); return }
     var t = e.target
     if (isVE(t)) { hideOv(dom.hoverOv); state.hovered = null; return }
     if (t === state.hovered) return
@@ -1958,6 +2088,13 @@
     if (isVE(e.target)) return
     if (state.textEditing && (e.target === state.textEditing || state.textEditing.contains(e.target))) return
     if (e.ctrlKey || e.altKey) return // Ctrl/Alt+click passes through to page
+    // Drag mode: any mousedown on a draggable element starts a drag candidate.
+    if (state.dragMode && isDraggableElement(e.target)) {
+      e.preventDefault(); e.stopPropagation()
+      selectElement(e.target)
+      state.dragCandidate = { element: e.target, x: e.clientX, y: e.clientY }
+      return
+    }
     var textTarget = secondClickTextTarget(e.target)
     if (textTarget) {
       e.preventDefault(); e.stopPropagation()
@@ -1966,6 +2103,181 @@
     }
     e.preventDefault(); e.stopPropagation()
     selectElement(e.target)
+  }
+
+  function onMouseUp(e) {
+    if (state.dragging) {
+      finishDrag(e)
+    }
+    state.dragCandidate = null
+  }
+
+  // ========== Drag to Reorder ==========
+
+  function isDraggableElement(node) {
+    if (!node || !node.tagName) return false
+    var tag = node.tagName.toLowerCase()
+    if (['html', 'head', 'body', 'script', 'style'].indexOf(tag) !== -1) return false
+    if (isVE(node)) return false
+    if (!node.parentNode) return false
+    return true
+  }
+
+  function startDrag(element, e) {
+    state.dragging = element
+    element.setAttribute('data-ve-dragging', '1')
+    document.body.setAttribute('data-ve-drag-active', '1')
+    hideOv(dom.hoverOv)
+    updateDropTarget(e)
+  }
+
+  function updateDropTarget(e) {
+    if (!state.dragging) return
+    // Temporarily hide the dragging element so elementFromPoint sees what's behind.
+    var prevPe = state.dragging.style.pointerEvents
+    state.dragging.style.pointerEvents = 'none'
+    var below = document.elementFromPoint(e.clientX, e.clientY)
+    state.dragging.style.pointerEvents = prevPe
+    if (!below || isVE(below)) {
+      // Cursor is outside the page. Use sibling fallback so a drop indicator
+      // is still shown somewhere reasonable.
+      siblingFallback(e); return
+    }
+    // If cursor is on the dragging element or its descendants, fall back to
+    // sibling-position logic so users can still see where it would land.
+    if (below === state.dragging || state.dragging.contains(below)) {
+      siblingFallback(e); return
+    }
+    // Walk up if below is inside dragging (defensive — shouldn't usually hit).
+    var target = below
+    while (target && (target === state.dragging || state.dragging.contains(target))) {
+      target = target.parentNode
+    }
+    if (!target || !target.tagName) { siblingFallback(e); return }
+    var tag = target.tagName.toLowerCase()
+    if (['html', 'head', 'body'].indexOf(tag) !== -1 || isVE(target)) {
+      siblingFallback(e); return
+    }
+    setDropTarget(target, e)
+  }
+
+  function setDropTarget(target, e) {
+    var rect = target.getBoundingClientRect()
+    // Detect orientation: if siblings are arranged in a row (similar tops),
+    // use x to decide before/after; otherwise default to y.
+    var parent = target.parentNode
+    var horizontal = false
+    if (parent) {
+      var sibs = parent.children
+      if (sibs && sibs.length > 1) {
+        var first = sibs[0].getBoundingClientRect()
+        var second = sibs[1].getBoundingClientRect()
+        if (Math.abs(first.top - second.top) < 10 && Math.abs(first.left - second.left) > 10) {
+          horizontal = true
+        }
+      }
+    }
+    var before
+    if (horizontal) {
+      before = e.clientX < rect.left + rect.width / 2
+    } else {
+      before = e.clientY < rect.top + rect.height / 2
+    }
+    state.dropTarget = target
+    state.dropBefore = before
+    state.dropHorizontal = horizontal
+    showDropIndicator(rect, before, horizontal)
+  }
+
+  function siblingFallback(e) {
+    // When cursor is over the dragging element or off-page, find the closest
+    // sibling within the dragging's parent and use it as a drop target hint.
+    var dragging = state.dragging
+    if (!dragging || !dragging.parentNode) { hideDropIndicator(); state.dropTarget = null; return }
+    var parent = dragging.parentNode
+    var children = []
+    for (var i = 0; i < parent.children.length; i++) {
+      var ch = parent.children[i]
+      if (ch !== dragging && !isVE(ch)) children.push(ch)
+    }
+    if (!children.length) { hideDropIndicator(); state.dropTarget = null; return }
+    var best = null
+    var bestDist = Infinity
+    for (var j = 0; j < children.length; j++) {
+      var r = children[j].getBoundingClientRect()
+      var cx = r.left + r.width / 2
+      var cy = r.top + r.height / 2
+      var dx = e.clientX - cx, dy = e.clientY - cy
+      var d = dx * dx + dy * dy
+      if (d < bestDist) { bestDist = d; best = children[j] }
+    }
+    if (!best) { hideDropIndicator(); state.dropTarget = null; return }
+    setDropTarget(best, e)
+  }
+
+  function showDropIndicator(rect, before, horizontal) {
+    dom.dropInd.style.display = 'block'
+    if (horizontal) {
+      dom.dropInd.className = PREFIX + '-drop-ind v'
+      var left = before ? rect.left : rect.right
+      dom.dropInd.style.left = (left - 1) + 'px'
+      dom.dropInd.style.top = Math.max(0, rect.top - 2) + 'px'
+      dom.dropInd.style.width = ''
+      dom.dropInd.style.height = (rect.height + 4) + 'px'
+    } else {
+      dom.dropInd.className = PREFIX + '-drop-ind h'
+      var top = before ? rect.top : rect.bottom
+      dom.dropInd.style.left = Math.max(0, rect.left - 2) + 'px'
+      dom.dropInd.style.top = (top - 1) + 'px'
+      dom.dropInd.style.width = (rect.width + 4) + 'px'
+      dom.dropInd.style.height = ''
+    }
+  }
+
+  function hideDropIndicator() {
+    dom.dropInd.style.display = 'none'
+  }
+
+  function finishDrag(e) {
+    var dragging = state.dragging
+    var target = state.dropTarget
+    var before = state.dropBefore
+    // Clear drag state
+    dragging.removeAttribute('data-ve-dragging')
+    document.body.removeAttribute('data-ve-drag-active')
+    hideDropIndicator()
+    state.dragging = null
+    state.dropTarget = null
+    state.dragCandidate = null
+    if (!target || !target.parentNode) { selectElement(dragging); return }
+    if (dragging.contains(target)) {
+      showToast(t('不能放到自己里面'))
+      selectElement(dragging)
+      return
+    }
+    // Don't move if it's already in the right position
+    var nextSibling = before ? target : target.nextSibling
+    if (dragging === target || dragging === nextSibling) {
+      selectElement(dragging)
+      return
+    }
+    pushHistory('drag-move')
+    target.parentNode.insertBefore(dragging, nextSibling)
+    selectElement(dragging)
+    updateSelOverlay()
+    showToast(t('元素已移动'))
+  }
+
+  function cancelDrag() {
+    if (!state.dragging) return
+    state.dragging.removeAttribute('data-ve-dragging')
+    document.body.removeAttribute('data-ve-drag-active')
+    hideDropIndicator()
+    var dragging = state.dragging
+    state.dragging = null
+    state.dropTarget = null
+    state.dragCandidate = null
+    selectElement(dragging)
   }
 
   function onDoubleClickCapture(e) {
@@ -2051,6 +2363,7 @@
     showToast(t('点击选中元素 · 双击文字直接编辑 · Ctrl 点击触发原页面'), 3000)
     document.addEventListener('mousemove', onMouseMove, true)
     document.addEventListener('mousedown', onMouseDown, true)
+    document.addEventListener('mouseup', onMouseUp, true)
     document.addEventListener('click', onClickCapture, true)
     document.addEventListener('dblclick', onDoubleClickCapture, true)
     window.addEventListener('scroll', onScrollResize, true)
@@ -2059,7 +2372,9 @@
 
   function exitEdit() {
     finishTextEdit()
-    state.active = false; state.selected = null; state.hovered = null; state.textFlow = false
+    if (state.dragging) cancelDrag()
+    document.body.removeAttribute('data-ve-drag-mode')
+    state.active = false; state.selected = null; state.hovered = null; state.textFlow = false; state.dragMode = false
     dom.toggle.classList.remove('active')
     dom.toggle.innerHTML = ICON_EDIT
     dom.toggle.title = t('切换编辑模式 (Alt+E)')
@@ -2071,6 +2386,7 @@
     updateToolbarState()
     document.removeEventListener('mousemove', onMouseMove, true)
     document.removeEventListener('mousedown', onMouseDown, true)
+    document.removeEventListener('mouseup', onMouseUp, true)
     document.removeEventListener('click', onClickCapture, true)
     document.removeEventListener('dblclick', onDoubleClickCapture, true)
     window.removeEventListener('scroll', onScrollResize, true)
@@ -2200,8 +2516,9 @@
   function onKeyDown(e) {
     if (e.altKey && e.key.toLowerCase() === 'e') { e.preventDefault(); toggleEdit(); return }
     if (!state.active) return
-    if (e.key === 'Escape') { e.preventDefault(); state.textEditing ? finishTextEdit() : (state.selected ? deselectElement() : exitEdit()); return }
+    if (e.key === 'Escape') { e.preventDefault(); state.dragging ? cancelDrag() : (state.textEditing ? finishTextEdit() : (state.selected ? deselectElement() : exitEdit())); return }
     if (e.altKey && e.key.toLowerCase() === 't') { e.preventDefault(); toggleTextEdit(); return }
+    if (e.altKey && e.key.toLowerCase() === 'd') { e.preventDefault(); toggleDragMode(); return }
     if (e.altKey && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); return }
     if (e.altKey && e.key.toLowerCase() === 'y') { e.preventDefault(); redo(); return }
     if (e.altKey && e.key === 'ArrowLeft' && hasUsablePager()) { e.preventDefault(); goPage(-1); return }

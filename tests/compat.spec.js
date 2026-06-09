@@ -695,3 +695,261 @@ test('reads runtime generated page counters', async ({ page }) => {
   await expect(page.locator('.__ve-page-label')).toContainText('2/12')
   await expect(page.locator('.slide-inner h1')).toContainText('第 2 页')
 })
+
+test('image replace and crop controls appear and work', async ({ page }) => {
+  await page.goto(`${baseURL}/index.html`)
+  await page.getByRole('tab', { name: '粘贴代码' }).click()
+  await page.locator('#html-input').fill(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { margin: 0; padding: 80px 40px; font-family: sans-serif; }
+    img { display: block; width: 200px; height: 150px; background: #ddd; }
+  </style>
+</head>
+<body>
+  <h1>Image Test</h1>
+  <img src="placeholder.png" alt="Test image">
+</body>
+</html>`)
+
+  await page.locator('#btn-start').click()
+  await ensureEditMode(page)
+
+  // Select the image via structure tree or direct click
+  await page.locator('img').click()
+  await page.locator('[data-ve-action="toggle-layout"]').click()
+
+  // Select the image element
+  const imgEl = page.locator('img')
+  await imgEl.click()
+  const imageBox = page.locator('.__ve-content-box').filter({ hasText: /img/ })
+  await expect(imageBox).toBeVisible()
+
+  // Verify replace button is present
+  const replaceBtn = imageBox.locator('button').filter({ hasText: /替换图片|Replace Image/ })
+  await expect(replaceBtn).toBeVisible()
+
+  // Verify object-fit selector is present and defaults to fill (CSS default for img)
+  const fitSelect = imageBox.locator('select').first()
+  await expect(fitSelect).toBeVisible()
+
+  // Change object-fit to cover
+  await fitSelect.selectOption('cover')
+  await expect(imgEl).toHaveCSS('object-fit', 'cover')
+
+  // Change object-fit to contain
+  await fitSelect.selectOption('contain')
+  await expect(imgEl).toHaveCSS('object-fit', 'contain')
+
+  // Verify object-position grid is present (9 cells)
+  const posGrid = imageBox.locator('.__ve-pos-grid')
+  await expect(posGrid).toBeVisible()
+  const cells = posGrid.locator('.__ve-pos-cell')
+  await expect(cells).toHaveCount(9)
+
+  // Click top-left position cell (first cell)
+  await cells.nth(0).click()
+  await expect(imgEl).toHaveCSS('object-position', '0% 0%')
+  await expect(cells.nth(0)).toHaveClass(/active/)
+
+  // Click bottom-right position cell (last cell)
+  await cells.nth(8).click()
+  await expect(imgEl).toHaveCSS('object-position', '100% 100%')
+  await expect(cells.nth(8)).toHaveClass(/active/)
+  // Previous cell should no longer be active
+  await expect(cells.nth(0)).not.toHaveClass(/active/)
+
+  // Click center cell (5th, index 4)
+  await cells.nth(4).click()
+  await expect(imgEl).toHaveCSS('object-position', '50% 50%')
+
+  // Verify replace image via file input (simulate via page.evaluate)
+  const tinyPng = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=='
+  await page.evaluate((src) => {
+    const img = document.querySelector('img')
+    img.setAttribute('src', src)
+  }, tinyPng)
+  await expect(imgEl).toHaveAttribute('src', tinyPng)
+})
+
+test('drag-to-reorder moves an element to a new position', async ({ page }) => {
+  await page.goto(`${baseURL}/index.html`)
+  await page.getByRole('tab', { name: '粘贴代码' }).click()
+  await page.locator('#html-input').fill(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { margin: 0; padding: 100px 40px; font-family: sans-serif; }
+    .item { padding: 24px; margin: 12px 0; background: #f0f0f0; border-radius: 8px; font-size: 18px; }
+    #a { background: #fee; }
+    #b { background: #efe; }
+    #c { background: #eef; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="item" id="a">Item A</div>
+    <div class="item" id="b">Item B</div>
+    <div class="item" id="c">Item C</div>
+  </div>
+</body>
+</html>`)
+
+  await page.locator('#btn-start').click()
+  await ensureEditMode(page)
+
+  // Enter drag mode (required to enable dragging)
+  await page.locator('[data-ve-action="drag-move"]').click()
+  await expect(page.locator('[data-ve-action="drag-move"]')).toHaveClass(/active/)
+
+  // Verify initial order: A, B, C
+  const initialOrder = await page.evaluate(() => {
+    return Array.from(document.querySelectorAll('.item')).map(el => el.id).join(',')
+  })
+  expect(initialOrder).toBe('a,b,c')
+
+  // Drag Item A down past Item B (to become A→B order swap: B, A, C)
+  const itemA = await page.locator('#a').boundingBox()
+  const itemB = await page.locator('#b').boundingBox()
+  // Drag from middle of A to middle of B + a bit below midpoint => insert after B
+  const startX = itemA.x + itemA.width / 2
+  const startY = itemA.y + itemA.height / 2
+  // Target: lower half of B so it inserts after B
+  const endX = itemB.x + itemB.width / 2
+  const endY = itemB.y + itemB.height * 0.75
+
+  await page.mouse.move(startX, startY)
+  await page.mouse.down()
+  // Move past threshold to trigger drag mode
+  await page.mouse.move(startX + 10, startY + 10, { steps: 3 })
+  // Verify drop indicator becomes visible during drag
+  await page.mouse.move(endX, endY, { steps: 5 })
+  await expect(page.locator('.__ve-drop-ind')).toBeVisible()
+  await page.mouse.up()
+
+  // Verify new order: B, A, C
+  const newOrder = await page.evaluate(() => {
+    return Array.from(document.querySelectorAll('.item')).map(el => el.id).join(',')
+  })
+  expect(newOrder).toBe('b,a,c')
+
+  // Verify drop indicator is hidden after drop
+  await expect(page.locator('.__ve-drop-ind')).toBeHidden()
+
+  // Verify undo restores original order
+  await page.keyboard.press('Alt+z')
+  const undoneOrder = await page.evaluate(() => {
+    return Array.from(document.querySelectorAll('.item')).map(el => el.id).join(',')
+  })
+  expect(undoneOrder).toBe('a,b,c')
+})
+
+test('drag-to-reorder cancels with Escape and does not move', async ({ page }) => {
+  await page.goto(`${baseURL}/index.html`)
+  await page.getByRole('tab', { name: '粘贴代码' }).click()
+  await page.locator('#html-input').fill(`<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { margin: 0; padding: 100px 40px; font-family: sans-serif; }
+    .item { padding: 24px; margin: 12px 0; background: #f0f0f0; }
+  </style>
+</head>
+<body>
+  <div class="item" id="x">X</div>
+  <div class="item" id="y">Y</div>
+</body>
+</html>`)
+
+  await page.locator('#btn-start').click()
+  await ensureEditMode(page)
+
+  // Enter drag mode
+  await page.locator('[data-ve-action="drag-move"]').click()
+
+  const itemX = await page.locator('#x').boundingBox()
+  const itemY = await page.locator('#y').boundingBox()
+
+  await page.mouse.move(itemX.x + itemX.width / 2, itemX.y + itemX.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(itemY.x + itemY.width / 2, itemY.y + itemY.height * 0.8, { steps: 5 })
+  // Cancel with Esc
+  await page.keyboard.press('Escape')
+  await page.mouse.up()
+
+  // Order should be unchanged
+  const order = await page.evaluate(() => {
+    return Array.from(document.querySelectorAll('.item')).map(el => el.id).join(',')
+  })
+  expect(order).toBe('x,y')
+  await expect(page.locator('.__ve-drop-ind')).toBeHidden()
+})
+
+test('drag mode is mutually exclusive with text edit mode', async ({ page }) => {
+  await page.goto(`${baseURL}/index.html`)
+  await page.getByRole('tab', { name: '粘贴代码' }).click()
+  await page.locator('#html-input').fill(`<!DOCTYPE html>
+<html>
+<head><style>body { padding: 100px; font-family: sans-serif; }</style></head>
+<body><p>Hello</p></body>
+</html>`)
+
+  await page.locator('#btn-start').click()
+  await ensureEditMode(page)
+
+  const textBtn = page.locator('[data-ve-action="edit-text"]')
+  const dragBtn = page.locator('[data-ve-action="drag-move"]')
+
+  // Turn on text edit
+  await textBtn.click()
+  await expect(textBtn).toHaveClass(/active/)
+  await expect(dragBtn).not.toHaveClass(/active/)
+
+  // Turn on drag mode → should turn off text edit automatically
+  await dragBtn.click()
+  await expect(dragBtn).toHaveClass(/active/)
+  await expect(textBtn).not.toHaveClass(/active/)
+
+  // Turn on text edit again → should turn off drag mode
+  await textBtn.click()
+  await expect(textBtn).toHaveClass(/active/)
+  await expect(dragBtn).not.toHaveClass(/active/)
+})
+
+test('elements do not drag when drag mode is off', async ({ page }) => {
+  await page.goto(`${baseURL}/index.html`)
+  await page.getByRole('tab', { name: '粘贴代码' }).click()
+  await page.locator('#html-input').fill(`<!DOCTYPE html>
+<html>
+<head><style>
+  body { margin: 0; padding: 100px 40px; font-family: sans-serif; }
+  .item { padding: 24px; margin: 12px 0; background: #f0f0f0; }
+</style></head>
+<body>
+  <div class="item" id="p">P</div>
+  <div class="item" id="q">Q</div>
+</body>
+</html>`)
+
+  await page.locator('#btn-start').click()
+  await ensureEditMode(page)
+  // Drag mode is OFF by default
+
+  const itemP = await page.locator('#p').boundingBox()
+  const itemQ = await page.locator('#q').boundingBox()
+
+  // Try to drag P past Q
+  await page.mouse.move(itemP.x + itemP.width / 2, itemP.y + itemP.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(itemQ.x + itemQ.width / 2, itemQ.y + itemQ.height * 0.8, { steps: 5 })
+  await page.mouse.up()
+
+  // Order should NOT change because drag mode is off
+  const order = await page.evaluate(() => {
+    return Array.from(document.querySelectorAll('.item')).map(el => el.id).join(',')
+  })
+  expect(order).toBe('p,q')
+})
