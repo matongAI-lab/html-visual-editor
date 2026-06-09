@@ -19,6 +19,10 @@
 
   var ICON_EDIT = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>'
   var ICON_X = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
+  // 14px action icons, single-color, fits the dark toolbar.
+  var ICON_UNDO = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-15-6.7L3 13"/></svg>'
+  var ICON_REDO = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 15-6.7L21 13"/></svg>'
+  var ICON_RELOAD = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>'
 
   // ========== i18n ==========
   var LANG = /^zh\b/i.test((typeof navigator !== 'undefined' ? navigator.language : 'en') || 'en') ? 'zh' : 'en'
@@ -76,6 +80,7 @@
     '样式面板': 'Style Panel', '未选择': 'None',
     '进入编辑模式后，点击页面里的标题、段落、卡片或按钮开始调整。': 'Enter edit mode, then click any element to start.',
     '编辑版式': 'Edit Layout', '编辑文字': 'Edit Text', '撤销': 'Undo', '复原': 'Redo',
+    '🎨 版式': '🎨 Layout', '✏️ 文字': '✏️ Text', '👆 拖拽': '👆 Drag',
     '上一页': 'Prev', '下一页': 'Next', '重新载入': 'Reload',
     '复制 HTML': 'Copy HTML', '保存 HTML': 'Save HTML',
     '切换编辑模式 (Alt+E)': 'Toggle edit mode (Alt+E)',
@@ -324,6 +329,8 @@
 ' + P + 'tb-btn.primary:hover{background:#1d4ed8;box-shadow:0 8px 18px rgba(37,99,235,.28)}\
 ' + P + 'tb-btn.primary:active{background:#1e40af}\
 ' + P + 'tb-btn:disabled{opacity:.32;cursor:default;transform:none!important;box-shadow:none!important}\
+' + P + 'tb-btn.icon{width:32px;padding:0;display:inline-flex;align-items:center;justify-content:center}\
+' + P + 'tb-btn.icon svg{display:block}\
 ' + P + 'tb-btn.exit{background:transparent;border:none;color:#94a3b8;padding:0 8px;font-size:16px;transition:color .15s ' + EASE + ',transform .15s ' + EASE + '}\
 ' + P + 'tb-btn.exit:hover{color:#fff;transform:scale(1.15)}\
 ' + P + 'tb-btn.exit:active{transform:scale(0.9);transition-duration:.08s}\
@@ -610,15 +617,15 @@ body[data-ve-drag-active] *{cursor:grabbing!important}\
     copyBtn.addEventListener('click', copyHTML)
     var dlBtn = el('button', PREFIX + '-tb-btn primary', { text: t('保存 HTML'), title: t('保存 HTML'), 'data-ve-action': 'download-html' })
     dlBtn.addEventListener('click', downloadHTML)
-    dom.layoutBtn = el('button', PREFIX + '-tb-btn', { text: t('编辑版式'), title: t('打开/关闭版式编辑'), 'data-ve-action': 'toggle-layout' })
+    dom.layoutBtn = el('button', PREFIX + '-tb-btn', { text: t('🎨 版式'), title: t('打开/关闭版式编辑'), 'data-ve-action': 'toggle-layout' })
     dom.layoutBtn.addEventListener('click', toggleLayoutPanel)
-    dom.textBtn = el('button', PREFIX + '-tb-btn', { text: t('编辑文字'), title: t('点击页面文字直接编辑 (Alt+T)'), 'data-ve-action': 'edit-text' })
+    dom.textBtn = el('button', PREFIX + '-tb-btn', { text: t('✏️ 文字'), title: t('点击页面文字直接编辑 (Alt+T)'), 'data-ve-action': 'edit-text' })
     dom.textBtn.addEventListener('click', toggleTextEdit)
-    dom.dragBtn = el('button', PREFIX + '-tb-btn', { text: t('拖拽移动'), title: t('按住元素拖动可改顺序 (Alt+D)'), 'data-ve-action': 'drag-move' })
+    dom.dragBtn = el('button', PREFIX + '-tb-btn', { text: t('👆 拖拽'), title: t('按住元素拖动可改顺序 (Alt+D)'), 'data-ve-action': 'drag-move' })
     dom.dragBtn.addEventListener('click', toggleDragMode)
-    dom.undoBtn = el('button', PREFIX + '-tb-btn', { text: t('撤销'), title: t('撤销上一步 (Alt+Z)'), 'data-ve-action': 'undo' })
+    dom.undoBtn = el('button', PREFIX + '-tb-btn icon', { html: ICON_UNDO, title: t('撤销上一步 (Alt+Z)'), 'data-ve-action': 'undo' })
     dom.undoBtn.addEventListener('click', undo)
-    dom.redoBtn = el('button', PREFIX + '-tb-btn', { text: t('复原'), title: t('复原刚刚撤销的操作 (Alt+Y)'), 'data-ve-action': 'redo' })
+    dom.redoBtn = el('button', PREFIX + '-tb-btn icon', { html: ICON_REDO, title: t('复原刚刚撤销的操作 (Alt+Y)'), 'data-ve-action': 'redo' })
     dom.redoBtn.addEventListener('click', redo)
     dom.pager = el('div', PREFIX + '-pager')
     dom.prevPageBtn = el('button', PREFIX + '-tb-btn', { text: t('上一页'), title: t('切换到上一页 (Alt+←)'), 'data-ve-action': 'prev-page' })
@@ -629,7 +636,7 @@ body[data-ve-drag-active] *{cursor:grabbing!important}\
     dom.pager.appendChild(dom.prevPageBtn)
     dom.pager.appendChild(dom.pageLabel)
     dom.pager.appendChild(dom.nextPageBtn)
-    var reloadBtn = el('button', PREFIX + '-tb-btn', { text: t('重新载入'), title: t('重新载入当前文件/入口页'), 'data-ve-action': 'reload' })
+    var reloadBtn = el('button', PREFIX + '-tb-btn icon', { html: ICON_RELOAD, title: t('重新载入当前文件/入口页'), 'data-ve-action': 'reload' })
     reloadBtn.addEventListener('click', reloadPage)
     var leftGroup = el('div', PREFIX + '-tb-group')
     var mainGroup = el('div', PREFIX + '-tb-group main')
