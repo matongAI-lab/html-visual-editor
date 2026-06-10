@@ -31,6 +31,8 @@ It lets you open an AI-generated HTML page, click elements directly in the rende
 - Upload an `.html` or `.htm` file.
 - Paste HTML code directly into the editor.
 - Enter edit mode automatically after an uploaded or demo HTML file is loaded.
+- Move the floating toolbar anywhere by dragging its grip handle, so it never blocks the area you are editing.
+- Dock the style panel to the left or right edge by dragging its header.
 - Select elements visually from the page.
 - Use the compact structure position bar to jump to the previous, current, or next nearby editable structure item.
 - Edit text on selected elements.
@@ -114,6 +116,18 @@ Dropping or selecting an HTML file loads it and enters visual editing mode autom
 
 If you want to inspect or change the source before editing, use the paste tab instead. Pasted HTML waits for the "Start editing" button.
 
+## Floating Toolbar
+
+The editing toolbar is a floating pill, centered at the top of the viewport by default instead of stretching across the whole width.
+
+- Drag the grip handle on its left edge to move it anywhere; it stays inside the viewport.
+- The position is remembered for the current tab session.
+- Double-click the grip handle to snap it back to the default top-center slot.
+
+The style panel can be docked too: drag its header across the screen to dock it to the left or right edge, and double-click the header to send it back to the default right side. On small screens the panel stays a bottom sheet and docking is disabled.
+
+When edit mode is off, the toolbar and the style panel are fully hidden and no longer intercept clicks meant for the page underneath.
+
 ## Structure Position Bar
 
 The style panel does not show a full page outline. After you select an element, the page structure area shows only three nearby items:
@@ -191,4 +205,4 @@ tests/compat.spec.js    Cross-browser compatibility tests
 
 ## License
 
-No license has been selected yet. Add a license before treating this project as reusable open-source software.
+MIT. See [LICENSE](LICENSE).

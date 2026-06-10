@@ -1,7 +1,8 @@
 {
   "name": "html-visual-editor",
-  "version": "0.1.0",
+  "version": "0.5.0",
   "private": true,
+  "license": "MIT",
   "description": "A dependency-light visual editor for static HTML pages.",
   "scripts": {
     "check": "node --check editor.js && node scripts/check-inline-scripts.js",

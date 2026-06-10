@@ -1,6 +1,26 @@
 # Changelog
 
-## 0.4.0 — 2026-06-09
+## 0.5.0 — 2026-06-10
+
+### New Features
+
+- **Draggable floating toolbar**: the editing toolbar is no longer a fixed full-width strip pinned to the top. It is now a floating pill, auto-centered at the top by default, with a grip handle on its left edge. Drag the handle to move the toolbar anywhere (clamped to the viewport), double-click the handle to snap back to the default slot. The position is remembered per tab session (`sessionStorage`), so it survives undo/redo reloads.
+- **Dockable style panel**: drag the style panel by its header to dock it to the left or right edge of the viewport, double-click the header to reset to the default right dock. The chosen side is remembered per tab session. Disabled on small screens where the panel is a bottom sheet.
+
+### Bug Fixes
+
+- **Hidden editor chrome was blocking page clicks**: the toolbar and the style panel were hidden with `opacity: 0` but kept `pointer-events: auto`, so outside edit mode an invisible toolbar strip (top) and panel column (right) silently swallowed clicks on the underlying page. Both now also toggle `visibility`, which removes them from hit testing when hidden.
+- **Buttons inside hidden chrome lingered as click targets**: toolbar and panel buttons used `transition: all`, which also transitioned the inherited `visibility` change, keeping them clickable for an extra 150–200ms after their container hid. Their transitions now enumerate only the properties they actually animate (background, border-color, color, transform, box-shadow, opacity).
+
+### Bug Fixes (robustness)
+
+- **`enterEdit` is now idempotent**: a manual toggle click racing the 80ms auto-edit timer could double-enter edit mode (duplicating document listeners) or, in the other direction, immediately toggle edit mode back off. `enterEdit` now returns early when already active.
+
+### Testing
+
+- Two pager tests clicked toolbar buttons before edit mode had actually activated; they only passed because the invisible toolbar still intercepted clicks (the bug above). They now wait for edit mode like the other tests.
+- Two tests used a racy check-then-click pattern against the auto-edit timer (the cause of an intermittent mobile-safari failure); they now use the shared `ensureEditMode` helper.
+- Added regression coverage for toolbar dragging, viewport clamping, session position memory, double-click reset, panel left/right docking with reset, and for hidden editor chrome no longer blocking page clicks.
 
 ### New Features
 

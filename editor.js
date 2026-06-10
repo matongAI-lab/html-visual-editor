@@ -6,7 +6,7 @@
   var EASE = 'cubic-bezier(.4,0,.2,1)'
   var EASE_OUT = 'cubic-bezier(0,.7,.3,1)'
 
-  var state = { active: false, selected: null, hovered: null, textEditing: null, textFlow: false, dragMode: false, history: [], future: [], pages: [], pageMode: 'scroll', currentPage: 0, restoring: false, layoutOpen: false, dragging: null, dragCandidate: null, dropTarget: null, dropBefore: false }
+  var state = { active: false, selected: null, hovered: null, textEditing: null, textFlow: false, dragMode: false, history: [], future: [], pages: [], pageMode: 'scroll', currentPage: 0, restoring: false, layoutOpen: false, dragging: null, dragCandidate: null, dropTarget: null, dropBefore: false, toolbarPos: null, toolbarDragging: false, panelSide: 'right' }
   var dom = {}
 
   function each(list, fn) { Array.prototype.forEach.call(list, fn) }
@@ -23,6 +23,7 @@
   var ICON_UNDO = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-15-6.7L3 13"/></svg>'
   var ICON_REDO = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 15-6.7L21 13"/></svg>'
   var ICON_RELOAD = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>'
+  var ICON_GRIP = '<svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor"><circle cx="3" cy="3" r="1.3"/><circle cx="7" cy="3" r="1.3"/><circle cx="3" cy="8" r="1.3"/><circle cx="7" cy="8" r="1.3"/><circle cx="3" cy="13" r="1.3"/><circle cx="7" cy="13" r="1.3"/></svg>'
 
   // ========== i18n ==========
   var LANG = /^zh\b/i.test((typeof navigator !== 'undefined' ? navigator.language : 'en') || 'en') ? 'zh' : 'en'
@@ -105,7 +106,12 @@
     '删除当前区块？可用撤销恢复。': 'Delete this block? Undo can restore it.',
     '区块已删除': 'Block deleted',
     '文字编辑已开启': 'Text edit mode on', '文字编辑已关闭': 'Text edit mode off',
-    '重新载入会放弃未复制/保存的修改，确定继续吗？': 'Reload will discard unsaved changes. Continue?'
+    '重新载入会放弃未复制/保存的修改，确定继续吗？': 'Reload will discard unsaved changes. Continue?',
+    '拖动移动工具栏 · 双击复位': 'Drag to move the toolbar · double-click to reset',
+    '工具栏位置已复位': 'Toolbar position reset',
+    '拖动停靠到左侧或右侧 · 双击复位': 'Drag to dock left or right · double-click to reset',
+    '面板已停靠左侧': 'Panel docked left', '面板已停靠右侧': 'Panel docked right',
+    '面板位置已复位': 'Panel position reset'
   }
   function t(s) { return LANG === 'zh' ? s : (EN[s] || s) }
 
@@ -317,12 +323,15 @@
 ' + P + 'toggle:hover{transform:translateY(-2px);background:#1d4ed8;box-shadow:0 16px 36px rgba(37,99,235,.3)}\
 ' + P + 'toggle:active{transform:scale(0.92);transition-duration:.1s}\
 ' + P + 'toggle.active{display:none}\
-' + P + 'toolbar{position:fixed;top:12px;left:16px;right:16px;width:auto;min-height:46px;background:rgba(15,23,42,.94);border:1px solid rgba(148,163,184,.22);border-radius:10px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;padding:7px;gap:8px;pointer-events:auto;opacity:0;transform:translateY(-16px);transition:opacity .3s ' + EASE + ',transform .35s ' + EASE_OUT + ';z-index:' + (Z + 5) + ';box-shadow:0 18px 45px rgba(2,6,23,.28);-webkit-backdrop-filter:blur(16px) saturate(1.15);backdrop-filter:blur(16px) saturate(1.15)}\
-' + P + 'toolbar.visible{opacity:1;transform:translateY(0)}\
+' + P + 'toolbar{position:fixed;top:12px;left:16px;width:max-content;max-width:calc(100vw - 16px);min-height:46px;background:rgba(15,23,42,.94);border:1px solid rgba(148,163,184,.22);border-radius:10px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;padding:7px;gap:8px;pointer-events:auto;visibility:hidden;opacity:0;transform:translateY(-16px);transition:opacity .3s ' + EASE + ',transform .35s ' + EASE_OUT + ';z-index:' + (Z + 5) + ';box-shadow:0 18px 45px rgba(2,6,23,.28);-webkit-backdrop-filter:blur(16px) saturate(1.15);backdrop-filter:blur(16px) saturate(1.15)}\
+' + P + 'toolbar.visible{visibility:visible;opacity:1;transform:translateY(0)}\
+' + P + 'tb-handle{display:inline-flex;align-items:center;justify-content:center;width:18px;align-self:stretch;min-height:32px;cursor:grab;color:#64748b;border-radius:7px;touch-action:none;user-select:none;-webkit-user-select:none;transition:color .15s ' + EASE + ',background .15s ' + EASE + '}\
+' + P + 'tb-handle:hover{color:#e2e8f0;background:rgba(255,255,255,.07)}\
+' + P + 'tb-handle:active{cursor:grabbing}\
 ' + P + 'tb-group{display:flex;align-items:center;gap:6px;min-width:0}\
 ' + P + 'tb-group.main{flex:1;justify-content:center;flex-wrap:wrap}\
 ' + P + 'tb-group.export{padding:4px;border-radius:8px;background:rgba(37,99,235,.08);border:1px solid rgba(96,165,250,.14)}\
-' + P + 'tb-btn{height:32px;padding:0 12px;border-radius:7px;border:1px solid rgba(148,163,184,.18);background:rgba(255,255,255,.045);color:#cbd5e1;cursor:pointer;font-size:12px;white-space:nowrap;font-family:inherit;line-height:30px;transition:all .15s ' + EASE + '}\
+' + P + 'tb-btn{height:32px;padding:0 12px;border-radius:7px;border:1px solid rgba(148,163,184,.18);background:rgba(255,255,255,.045);color:#cbd5e1;cursor:pointer;font-size:12px;white-space:nowrap;font-family:inherit;line-height:30px;transition:background .15s ' + EASE + ',border-color .15s ' + EASE + ',color .15s ' + EASE + ',transform .15s ' + EASE + ',box-shadow .15s ' + EASE + ',opacity .15s ' + EASE + '}\
 ' + P + 'tb-btn:hover{background:rgba(255,255,255,.09);border-color:rgba(148,163,184,.3);color:#f8fafc}\
 ' + P + 'tb-btn:active{transform:scale(0.95);transition-duration:.08s}\
 ' + P + 'tb-btn.primary{background:#2563eb;border-color:#3b82f6;color:#fff}\
@@ -338,8 +347,17 @@
 ' + P + 'pager.hidden{display:none}\
 ' + P + 'page-label{min-width:44px;text-align:center;color:#93c5fd;font-size:12px;font-family:"SF Mono",Monaco,Consolas,monospace}\
 ' + P + 'breadcrumb{display:none;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#888;font-size:12px;font-family:"SF Mono",Monaco,Consolas,monospace}\
-' + P + 'panel{position:fixed;top:70px;right:16px;width:min(348px,calc(100vw - 32px));bottom:16px;background:rgba(11,18,32,.97);border:1px solid rgba(148,163,184,.2);border-radius:12px;overflow-x:hidden;overflow-y:auto;pointer-events:auto;opacity:0;transform:translateX(24px);transition:opacity .3s ' + EASE + ',transform .4s ' + EASE_OUT + ';z-index:' + (Z + 4) + ';box-shadow:0 24px 70px rgba(2,6,23,.36);-webkit-backdrop-filter:blur(18px) saturate(1.1);backdrop-filter:blur(18px) saturate(1.1)}\
-' + P + 'panel.visible{opacity:1;transform:translateX(0)}\
+' + P + 'panel{position:fixed;top:70px;right:16px;width:min(348px,calc(100vw - 32px));bottom:16px;background:rgba(11,18,32,.97);border:1px solid rgba(148,163,184,.2);border-radius:12px;overflow-x:hidden;overflow-y:auto;pointer-events:auto;visibility:hidden;opacity:0;transform:translateX(24px);transition:opacity .3s ' + EASE + ',transform .4s ' + EASE_OUT + ';z-index:' + (Z + 4) + ';box-shadow:0 24px 70px rgba(2,6,23,.36);-webkit-backdrop-filter:blur(18px) saturate(1.1);backdrop-filter:blur(18px) saturate(1.1)}\
+' + P + 'panel.visible{visibility:visible;opacity:1;transform:translateX(0)}\
+' + P + 'panel-drag-label{display:inline-flex;align-items:center;gap:8px}\
+' + P + 'panel-grip{display:none;align-items:center;color:#64748b}\
+@media (min-width:721px){\
+' + P + 'panel-grip{display:inline-flex}\
+' + P + 'panel-title{cursor:grab;touch-action:none}\
+' + P + 'panel-title:active{cursor:grabbing}\
+' + P + 'panel.dock-left{left:16px;right:auto}\
+' + P + 'panel.dock-left:not(.visible){transform:translateX(-24px)}\
+}\
 ' + P + 'tb-btn.active{background:#334155;border-color:#60a5fa;color:#fff}\
 ' + P + 'panel-title{position:sticky;top:0;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 14px;border-bottom:1px solid rgba(148,163,184,.14);background:rgba(11,18,32,.98);color:#f8fafc;font-size:13px;font-weight:700}\
 ' + P + 'panel-subtitle{font-size:11px;font-weight:500;color:#64748b}\
@@ -377,7 +395,7 @@
 ' + P + 'select{width:100%;height:30px;padding:0 9px;background:rgba(15,23,42,.72);border:1px solid rgba(148,163,184,.18);border-radius:7px;color:#e2e8f0;font-size:12px;outline:none;font-family:inherit;transition:border-color .15s ' + EASE + ',box-shadow .15s ' + EASE + '}\
 ' + P + 'select:focus{border-color:#60a5fa;box-shadow:0 0 0 2px rgba(96,165,250,.18)}\
 ' + P + 'btn-group{display:flex}\
-' + P + 'bg-item{flex:1;height:30px;padding:0 8px;background:rgba(255,255,255,.045);border:1px solid rgba(148,163,184,.14);color:#94a3b8;cursor:pointer;font-size:12px;text-align:center;font-family:inherit;transition:all .2s ' + EASE + '}\
+' + P + 'bg-item{flex:1;height:30px;padding:0 8px;background:rgba(255,255,255,.045);border:1px solid rgba(148,163,184,.14);color:#94a3b8;cursor:pointer;font-size:12px;text-align:center;font-family:inherit;transition:background .2s ' + EASE + ',border-color .2s ' + EASE + ',color .2s ' + EASE + '}\
 ' + P + 'bg-item:first-child{border-radius:7px 0 0 7px}\
 ' + P + 'bg-item:last-child{border-radius:0 7px 7px 0}\
 ' + P + 'bg-item+' + P + 'bg-item{border-left:none}\
@@ -405,7 +423,7 @@
 ' + P + 'block-title{font-size:12px;font-weight:700;color:#e2e8f0}\
 ' + P + 'block-path{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:#64748b;font-family:"SF Mono",Monaco,Consolas,monospace}\
 ' + P + 'block-actions{display:grid;grid-template-columns:1fr 1fr;gap:6px}\
-' + P + 'block-btn{height:30px;padding:0 8px;border-radius:7px;border:1px solid rgba(148,163,184,.16);background:rgba(255,255,255,.045);color:#cbd5e1;cursor:pointer;font-size:12px;font-family:inherit;line-height:28px;transition:all .15s ' + EASE + '}\
+' + P + 'block-btn{height:30px;padding:0 8px;border-radius:7px;border:1px solid rgba(148,163,184,.16);background:rgba(255,255,255,.045);color:#cbd5e1;cursor:pointer;font-size:12px;font-family:inherit;line-height:28px;transition:background .15s ' + EASE + ',border-color .15s ' + EASE + ',color .15s ' + EASE + ',transform .15s ' + EASE + ',box-shadow .15s ' + EASE + ',opacity .15s ' + EASE + '}\
 ' + P + 'block-btn:hover{background:rgba(255,255,255,.09);border-color:rgba(148,163,184,.3);color:#fff}\
 ' + P + 'block-btn:disabled{opacity:.4;cursor:default;transform:none!important}\
 ' + P + 'content-box{padding:12px 14px;border-bottom:1px solid rgba(148,163,184,.12);background:rgba(15,23,42,.18)}\
@@ -425,7 +443,7 @@
 ' + P + 'tree-item.muted ' + P + 'tree-tag{color:#64748b}\
 ' + P + 'tree-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#94a3b8}\
 ' + P + 'pos-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px;width:90px}\
-' + P + 'pos-cell{width:26px;height:26px;border-radius:5px;border:1px solid rgba(148,163,184,.18);background:rgba(255,255,255,.045);cursor:pointer;transition:all .15s ' + EASE + ';padding:0}\
+' + P + 'pos-cell{width:26px;height:26px;border-radius:5px;border:1px solid rgba(148,163,184,.18);background:rgba(255,255,255,.045);cursor:pointer;transition:background .15s ' + EASE + ',border-color .15s ' + EASE + ',box-shadow .15s ' + EASE + ';padding:0}\
 ' + P + 'pos-cell:hover{background:rgba(255,255,255,.09);border-color:rgba(148,163,184,.3)}\
 ' + P + 'pos-cell.active{background:#2563eb;border-color:#3b82f6}\
 ' + P + 'file-input{display:none}\
@@ -439,7 +457,7 @@ body[data-ve-drag-active]{cursor:grabbing!important;user-select:none!important}\
 body[data-ve-drag-active] *{cursor:grabbing!important}\
 @media (max-width:720px){\
 ' + P + 'toggle{right:16px;bottom:16px;width:46px;height:46px}\
-' + P + 'toolbar{top:8px;left:8px;right:8px;justify-content:flex-start;max-height:144px;overflow:auto}\
+' + P + 'toolbar{justify-content:flex-start;max-height:144px;overflow:auto;max-width:calc(100vw - 16px)}\
 ' + P + 'tb-group.main{order:3;flex-basis:100%;justify-content:flex-start}\
 ' + P + 'tb-group.export{order:2;flex:1;justify-content:flex-end}\
 ' + P + 'tb-btn{height:32px;line-height:30px;padding:0 10px}\
@@ -610,6 +628,8 @@ body[data-ve-drag-active] *{cursor:grabbing!important}\
     dom.toggle.addEventListener('click', toggleEdit)
 
     dom.toolbar = el('div', PREFIX + '-toolbar')
+    dom.tbHandle = el('div', PREFIX + '-tb-handle', { html: ICON_GRIP, title: t('拖动移动工具栏 · 双击复位') })
+    initToolbarDrag(dom.tbHandle)
     var exitBtn = el('button', PREFIX + '-tb-btn exit', { html: ICON_X, title: t('退出编辑'), 'data-ve-action': 'exit' })
     exitBtn.addEventListener('click', exitEdit)
     dom.breadcrumb = el('span', PREFIX + '-breadcrumb')
@@ -652,6 +672,7 @@ body[data-ve-drag-active] *{cursor:grabbing!important}\
     mainGroup.appendChild(reloadBtn)
     exportGroup.appendChild(copyBtn)
     exportGroup.appendChild(dlBtn)
+    dom.toolbar.appendChild(dom.tbHandle)
     dom.toolbar.appendChild(leftGroup)
     dom.toolbar.appendChild(mainGroup)
     dom.toolbar.appendChild(exportGroup)
@@ -660,6 +681,7 @@ body[data-ve-drag-active] *{cursor:grabbing!important}\
     dom.panel = el('div', PREFIX + '-panel')
     dom.panelInner = el('div', PREFIX + '-panel-inner')
     dom.panel.appendChild(dom.panelInner)
+    initPanelDrag()
 
     dom.hoverOv = el('div', PREFIX + '-hover-ov')
     dom.hoverOv.appendChild(el('span', PREFIX + '-ov-tag'))
@@ -693,8 +715,11 @@ body[data-ve-drag-active] *{cursor:grabbing!important}\
     dom.panelInner.classList.add('fade')
     _renderTimer = setTimeout(function () {
       dom.panelInner.innerHTML = ''
-      var title = el('div', PREFIX + '-panel-title')
-      title.appendChild(el('span', null, { text: t('样式面板') }))
+      var title = el('div', PREFIX + '-panel-title', { title: t('拖动停靠到左侧或右侧 · 双击复位') })
+      var titleLabel = el('span', PREFIX + '-panel-drag-label')
+      titleLabel.appendChild(el('span', PREFIX + '-panel-grip', { html: ICON_GRIP }))
+      titleLabel.appendChild(el('span', null, { text: t('样式面板') }))
+      title.appendChild(titleLabel)
       if (!state.selected) {
         title.appendChild(el('span', PREFIX + '-panel-subtitle', { text: t('未选择') }))
         dom.panelInner.appendChild(title)
@@ -2344,7 +2369,212 @@ body[data-ve-drag-active] *{cursor:grabbing!important}\
   function onScrollResize() {
     if (state.hovered && dom.hoverOv.style.display !== 'none') positionOv(dom.hoverOv, state.hovered)
     if (state.selected && dom.selOv.style.display !== 'none') positionOv(dom.selOv, state.selected)
-    if (state.active) { updateCurrentPage(); updatePagerState() }
+    if (state.active) { updateCurrentPage(); updatePagerState(); applyToolbarPos() }
+  }
+
+  // ========== Toolbar Position ==========
+  // The toolbar is a floating pill: auto-centered at the top by default,
+  // draggable by its grip handle, position remembered per tab.
+
+  function loadToolbarPos() {
+    try {
+      var raw = sessionStorage.getItem(PREFIX + '-toolbar-pos')
+      if (!raw) return null
+      var pos = JSON.parse(raw)
+      if (pos && typeof pos.left === 'number' && typeof pos.top === 'number') return pos
+    } catch (e) {}
+    return null
+  }
+
+  function saveToolbarPos(pos) {
+    try {
+      if (pos) sessionStorage.setItem(PREFIX + '-toolbar-pos', JSON.stringify(pos))
+      else sessionStorage.removeItem(PREFIX + '-toolbar-pos')
+    } catch (e) {}
+  }
+
+  function clampToolbarPos(left, top) {
+    var rect = dom.toolbar.getBoundingClientRect()
+    var margin = 8
+    var maxLeft = Math.max(margin, window.innerWidth - rect.width - margin)
+    var maxTop = Math.max(margin, window.innerHeight - rect.height - margin)
+    return {
+      left: Math.min(Math.max(left, margin), maxLeft),
+      top: Math.min(Math.max(top, margin), maxTop)
+    }
+  }
+
+  function applyToolbarPos() {
+    if (!dom.toolbar || state.toolbarDragging) return
+    if (state.toolbarPos) {
+      var pos = clampToolbarPos(state.toolbarPos.left, state.toolbarPos.top)
+      dom.toolbar.style.left = pos.left + 'px'
+      dom.toolbar.style.top = pos.top + 'px'
+    } else {
+      dom.toolbar.style.top = '12px'
+      var rect = dom.toolbar.getBoundingClientRect()
+      dom.toolbar.style.left = Math.max(8, Math.round((window.innerWidth - rect.width) / 2)) + 'px'
+    }
+  }
+
+  function resetToolbarPos() {
+    state.toolbarPos = null
+    saveToolbarPos(null)
+    applyToolbarPos()
+    showToast(t('工具栏位置已复位'))
+  }
+
+  function initToolbarDrag(handle) {
+    var start = null
+    function onDown(e) {
+      if (e.button !== undefined && e.button !== 0) return
+      var rect = dom.toolbar.getBoundingClientRect()
+      start = { x: e.clientX, y: e.clientY, left: rect.left, top: rect.top, moved: false }
+      e.preventDefault()
+      e.stopPropagation()
+      if (e.pointerId !== undefined && handle.setPointerCapture) {
+        try { handle.setPointerCapture(e.pointerId) } catch (err) {}
+      } else {
+        document.addEventListener('mousemove', onMove, true)
+        document.addEventListener('mouseup', onUp, true)
+      }
+    }
+    function onMove(e) {
+      if (!start) return
+      var dx = e.clientX - start.x
+      var dy = e.clientY - start.y
+      if (!start.moved) {
+        if (Math.abs(dx) + Math.abs(dy) < 3) return
+        start.moved = true
+        state.toolbarDragging = true
+      }
+      var pos = clampToolbarPos(start.left + dx, start.top + dy)
+      dom.toolbar.style.left = pos.left + 'px'
+      dom.toolbar.style.top = pos.top + 'px'
+    }
+    function onUp() {
+      if (!start) return
+      if (start.moved) {
+        var rect = dom.toolbar.getBoundingClientRect()
+        state.toolbarPos = { left: Math.round(rect.left), top: Math.round(rect.top) }
+        saveToolbarPos(state.toolbarPos)
+      }
+      start = null
+      state.toolbarDragging = false
+      document.removeEventListener('mousemove', onMove, true)
+      document.removeEventListener('mouseup', onUp, true)
+    }
+    if (window.PointerEvent) {
+      handle.addEventListener('pointerdown', onDown)
+      handle.addEventListener('pointermove', onMove)
+      handle.addEventListener('pointerup', onUp)
+      handle.addEventListener('pointercancel', onUp)
+    } else {
+      handle.addEventListener('mousedown', onDown)
+    }
+    handle.addEventListener('dblclick', function (e) {
+      e.preventDefault()
+      e.stopPropagation()
+      resetToolbarPos()
+    })
+  }
+
+  // ========== Panel Docking ==========
+  // The style panel docks to the right by default. Dragging its header
+  // across the viewport docks it to the left or right edge. Disabled on
+  // small screens where the panel is a bottom sheet.
+
+  function panelDockEnabled() {
+    return window.innerWidth > 720
+  }
+
+  function loadPanelSide() {
+    try {
+      return sessionStorage.getItem(PREFIX + '-panel-side') === 'left' ? 'left' : null
+    } catch (e) { return null }
+  }
+
+  function savePanelSide(side) {
+    try {
+      if (side === 'left') sessionStorage.setItem(PREFIX + '-panel-side', 'left')
+      else sessionStorage.removeItem(PREFIX + '-panel-side')
+    } catch (e) {}
+  }
+
+  function applyPanelSide() {
+    if (!dom.panel) return
+    dom.panel.classList.toggle('dock-left', state.panelSide === 'left')
+  }
+
+  function initPanelDrag() {
+    var start = null
+    function inTitle(node) {
+      while (node && node !== dom.panel) {
+        if (node.className && String(node.className).indexOf(PREFIX + '-panel-title') !== -1) return true
+        node = node.parentNode
+      }
+      return false
+    }
+    function onDown(e) {
+      if (!panelDockEnabled()) return
+      if (e.button !== undefined && e.button !== 0) return
+      if (!inTitle(e.target)) return
+      var rect = dom.panel.getBoundingClientRect()
+      start = { x: e.clientX, grabDX: e.clientX - rect.left, moved: false }
+      e.preventDefault()
+      if (e.pointerId !== undefined && dom.panel.setPointerCapture) {
+        try { dom.panel.setPointerCapture(e.pointerId) } catch (err) {}
+      } else {
+        document.addEventListener('mousemove', onMove, true)
+        document.addEventListener('mouseup', onUp, true)
+      }
+    }
+    function onMove(e) {
+      if (!start) return
+      if (!start.moved) {
+        if (Math.abs(e.clientX - start.x) < 4) return
+        start.moved = true
+      }
+      var width = dom.panel.getBoundingClientRect().width
+      var left = Math.min(Math.max(e.clientX - start.grabDX, 8), window.innerWidth - width - 8)
+      dom.panel.style.left = left + 'px'
+      dom.panel.style.right = 'auto'
+    }
+    function onUp() {
+      if (!start) return
+      if (start.moved) {
+        var rect = dom.panel.getBoundingClientRect()
+        var side = rect.left + rect.width / 2 < window.innerWidth / 2 ? 'left' : 'right'
+        dom.panel.style.left = ''
+        dom.panel.style.right = ''
+        state.panelSide = side
+        savePanelSide(side)
+        applyPanelSide()
+        showToast(side === 'left' ? t('面板已停靠左侧') : t('面板已停靠右侧'))
+      }
+      start = null
+      document.removeEventListener('mousemove', onMove, true)
+      document.removeEventListener('mouseup', onUp, true)
+    }
+    if (window.PointerEvent) {
+      dom.panel.addEventListener('pointerdown', onDown)
+      dom.panel.addEventListener('pointermove', onMove)
+      dom.panel.addEventListener('pointerup', onUp)
+      dom.panel.addEventListener('pointercancel', onUp)
+    } else {
+      dom.panel.addEventListener('mousedown', onDown)
+    }
+    dom.panel.addEventListener('dblclick', function (e) {
+      if (!panelDockEnabled()) return
+      // With pointer capture on dom.panel, clicks that started on the title
+      // are retargeted to the panel itself, so accept that target too.
+      if (e.target !== dom.panel && !inTitle(e.target)) return
+      e.preventDefault()
+      state.panelSide = 'right'
+      savePanelSide(null)
+      applyPanelSide()
+      showToast(t('面板位置已复位'))
+    })
   }
 
   // ========== Edit Mode ==========
@@ -2352,6 +2582,7 @@ body[data-ve-drag-active] *{cursor:grabbing!important}\
   function toggleEdit() { if (state.active) exitEdit(); else enterEdit() }
 
   function enterEdit() {
+    if (state.active) return
     state.active = true
     dom.toggle.classList.add('active')
     dom.toggle.innerHTML = ICON_X
@@ -2360,6 +2591,7 @@ body[data-ve-drag-active] *{cursor:grabbing!important}\
     state.layoutOpen = false
     refreshPages()
     updateToolbarState()
+    applyToolbarPos()
     showToast(t('点击选中元素 · 双击文字直接编辑 · Ctrl 点击触发原页面'), 3000)
     document.addEventListener('mousemove', onMouseMove, true)
     document.addEventListener('mousedown', onMouseDown, true)
@@ -2533,6 +2765,9 @@ body[data-ve-drag-active] *{cursor:grabbing!important}\
     if (document.getElementById(PREFIX + '-root')) return
     injectCSS()
     createUI()
+    state.toolbarPos = loadToolbarPos()
+    state.panelSide = loadPanelSide() || 'right'
+    applyPanelSide()
     try {
       var savedHistory = sessionStorage.getItem(PREFIX + '-history')
       if (savedHistory) state.history = JSON.parse(savedHistory) || []

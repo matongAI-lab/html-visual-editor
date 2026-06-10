@@ -73,6 +73,7 @@ test('next page scrolls vertical pages', async ({ page }) => {
 </html>`)
 
   await page.locator('#btn-start').click()
+  await ensureEditMode(page)
   await expect(page.locator('.__ve-page-label')).toContainText('/')
 
   const before = await page.evaluate(() => window.pageYOffset)
@@ -121,9 +122,7 @@ test('supports continuous text edits across different elements', async ({ page }
 
   await page.locator('#btn-start').click()
   await expect(page.locator('.__ve-toolbar')).toHaveCount(1)
-  if (!await page.locator('.__ve-toggle.active').count()) {
-    await page.locator('.__ve-toggle').evaluate(button => button.click())
-  }
+  await ensureEditMode(page)
   await expect(page.locator('.__ve-toggle')).toHaveClass(/active/)
   await page.locator('[data-ve-action="edit-text"]').evaluate(button => button.click())
   await expect(page.locator('[data-ve-action="edit-text"]')).toHaveClass(/active/)
@@ -220,9 +219,7 @@ test('downloads a clean html export', async ({ page }) => {
 
   await page.locator('#btn-start').click()
   await expect(page.locator('.__ve-toolbar')).toHaveCount(1)
-  if (!await page.locator('.__ve-toggle.active').count()) {
-    await page.locator('.__ve-toggle').evaluate(button => button.click())
-  }
+  await ensureEditMode(page)
   await expect(page.locator('.__ve-toggle')).toHaveClass(/active/)
   await page.locator('h1').click({ position: { x: 8, y: 8 } })
   await page.locator('[data-ve-action="edit-text"]').evaluate(button => button.click())
@@ -424,6 +421,7 @@ test('next page scrolls an inner page container', async ({ page }) => {
 </html>`)
 
   await page.locator('#btn-start').click()
+  await ensureEditMode(page)
   await expect(page.locator('.__ve-page-label')).toContainText('/')
 
   const before = await page.locator('.deck').evaluate(el => el.scrollTop)
@@ -952,4 +950,150 @@ test('elements do not drag when drag mode is off', async ({ page }) => {
     return Array.from(document.querySelectorAll('.item')).map(el => el.id).join(',')
   })
   expect(order).toBe('p,q')
+})
+
+test('toolbar is a floating pill that can be dragged and reset', async ({ page }) => {
+  await page.goto(`${baseURL}/index.html`)
+  await page.getByRole('tab', { name: '粘贴代码' }).click()
+  await page.locator('#html-input').fill(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>body { margin: 0; padding: 120px 40px; font-family: sans-serif; }</style>
+</head>
+<body>
+  <h1>Toolbar drag test</h1>
+  <p>Content paragraph</p>
+</body>
+</html>`)
+
+  await page.locator('#btn-start').click()
+  await ensureEditMode(page)
+
+  const toolbar = page.locator('.__ve-toolbar')
+  const handle = page.locator('.__ve-tb-handle')
+  await expect(handle).toBeVisible()
+  const before = await toolbar.boundingBox()
+
+  // Drag straight down by the grip handle
+  const hb = await handle.boundingBox()
+  await page.mouse.move(hb.x + hb.width / 2, hb.y + hb.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(hb.x + hb.width / 2, hb.y + hb.height / 2 + 150, { steps: 6 })
+  await page.mouse.up()
+
+  const after = await toolbar.boundingBox()
+  expect(after.y - before.y).toBeGreaterThan(100)
+
+  // The dragged position is remembered for the session
+  const saved = await page.evaluate(() => sessionStorage.getItem('__ve-toolbar-pos'))
+  expect(saved).not.toBeNull()
+
+  // Dragging the handle must not select page elements
+  await expect(page.locator('.__ve-sel-ov')).toBeHidden()
+
+  // Dragging towards the corner keeps the toolbar inside the viewport
+  const vp = page.viewportSize()
+  const hb2 = await handle.boundingBox()
+  await page.mouse.move(hb2.x + hb2.width / 2, hb2.y + hb2.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(vp.width - 1, vp.height - 1, { steps: 6 })
+  await page.mouse.up()
+  const clamped = await toolbar.boundingBox()
+  expect(clamped.x + clamped.width).toBeLessThanOrEqual(vp.width)
+  expect(clamped.y + clamped.height).toBeLessThanOrEqual(vp.height)
+
+  // Double-clicking the handle resets to the default top slot
+  await page.locator('.__ve-tb-handle').dblclick()
+  const reset = await toolbar.boundingBox()
+  expect(Math.round(reset.y)).toBe(12)
+  expect(await page.evaluate(() => sessionStorage.getItem('__ve-toolbar-pos'))).toBeNull()
+})
+
+test('style panel docks left and right by dragging its header', async ({ page }) => {
+  await page.goto(`${baseURL}/index.html`)
+  await page.getByRole('tab', { name: '粘贴代码' }).click()
+  await page.locator('#html-input').fill(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>body { margin: 0; padding: 120px 40px; font-family: sans-serif; }</style>
+</head>
+<body>
+  <h1>Panel dock test</h1>
+  <p>Content paragraph</p>
+</body>
+</html>`)
+
+  await page.locator('#btn-start').click()
+  await ensureEditMode(page)
+  await page.locator('[data-ve-action="toggle-layout"]').click()
+  await expect(page.locator('.__ve-panel.visible')).toBeVisible()
+
+  const vp = page.viewportSize()
+  const header = page.locator('.__ve-panel-title')
+  const hb = await header.boundingBox()
+  await page.mouse.move(hb.x + hb.width / 2, hb.y + hb.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(60, hb.y + hb.height / 2, { steps: 8 })
+  await page.mouse.up()
+
+  if (vp.width > 720) {
+    // Desktop: dragging past the middle docks the panel to the left
+    await expect(page.locator('.__ve-panel')).toHaveClass(/dock-left/)
+    const docked = await page.locator('.__ve-panel').boundingBox()
+    expect(docked.x).toBeLessThan(vp.width / 2)
+
+    // Double-clicking the header resets to the right dock
+    await page.locator('.__ve-panel-title').dblclick()
+    await expect(page.locator('.__ve-panel')).not.toHaveClass(/dock-left/)
+    const reset = await page.locator('.__ve-panel').boundingBox()
+    expect(reset.x).toBeGreaterThan(vp.width / 2)
+  } else {
+    // Small screens keep the bottom-sheet layout; docking is disabled
+    await expect(page.locator('.__ve-panel')).not.toHaveClass(/dock-left/)
+  }
+})
+
+test('hidden editor chrome does not block page clicks outside edit mode', async ({ page }) => {
+  await page.goto(`${baseURL}/index.html`)
+  await page.getByRole('tab', { name: '粘贴代码' }).click()
+  await page.locator('#html-input').fill(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { margin: 0; font-family: sans-serif; }
+    #top-bar { position: fixed; top: 0; left: 0; right: 0; height: 60px; }
+    #right-rail { position: fixed; top: 25%; right: 0; width: 200px; height: 120px; }
+  </style>
+</head>
+<body>
+  <button id="top-bar" onclick="window.__topClicks=(window.__topClicks||0)+1">Top bar</button>
+  <button id="right-rail" onclick="window.__railClicks=(window.__railClicks||0)+1">Right rail</button>
+  <p style="padding-top:100px">Body content</p>
+</body>
+</html>`)
+
+  await page.locator('#btn-start').click()
+  await ensureEditMode(page)
+
+  // Leave edit mode: the editor chrome must fully release the page
+  await page.locator('.__ve-tb-btn.exit').click()
+  await expect(page.locator('.__ve-toolbar')).toBeHidden()
+  await expect(page.locator('.__ve-panel')).toBeHidden()
+
+  // Wait until hit testing actually falls through to the page buttons
+  const vp = page.viewportSize()
+  await page.waitForFunction(([x, y]) => {
+    const el = document.elementFromPoint(x, y)
+    return el && el.id === 'top-bar'
+  }, [vp.width / 2, 30])
+
+  // Click where the toolbar used to be, and where the style panel sits
+  await page.mouse.click(vp.width / 2, 30)
+  await page.mouse.click(vp.width - 60, Math.round(vp.height * 0.25) + 60)
+  const clicks = await page.evaluate(() => ({ top: window.__topClicks || 0, rail: window.__railClicks || 0 }))
+  expect(clicks.top).toBe(1)
+  expect(clicks.rail).toBe(1)
 })
