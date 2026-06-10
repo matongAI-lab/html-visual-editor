@@ -251,7 +251,7 @@
 
   btnDemo.addEventListener('click', function() {
     if (!window.fetch) {
-      loadDemoHTML(fallbackDemo, '当前浏览器不支持 fetch，已载入内置演示页面。')
+      loadDemoHTML(fallbackDemo, '已加载内置演示页面。')
       return
     }
     fetch('demo.html').then(function(r) {
@@ -260,7 +260,8 @@
     }).then(function(html) {
       loadDemoHTML(html, '演示页面已载入，正在进入编辑模式。')
     }).catch(function() {
-      loadDemoHTML(fallbackDemo, '无法读取 demo.html，已载入内置演示页面。')
+      // file:// 双击打开模式下，浏览器会拒绝 fetch 本地文件，走这条 fallback 是正常的。
+      loadDemoHTML(fallbackDemo, '已加载内置演示页面（双击打开模式下不支持读取外部 demo）。')
     })
   })
 

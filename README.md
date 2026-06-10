@@ -2,6 +2,28 @@
 
 A small browser-based touch-up tool for AI-generated static HTML.
 
+**Positioning:** Help non-programmers turn AI-generated HTML into something usable.
+
+**产品定位：**帮助非程序员把 AI 生成的 HTML 改到能用。
+
+---
+
+## 🚀 最快上手 / Quickest Start
+
+**适合不懂技术的用户。完全不需要装 Node.js、git 或命令行工具。**
+
+1. 在 GitHub 页面点右上角绿色 **Code → Download ZIP**
+2. 把下载的 zip **解压**（右键 → 解压到当前文件夹）
+3. **双击 `index.html`**，浏览器自动打开
+4. 在打开的页面里：
+   - 「**上传文件**」选项卡 → 选你自己的 `.html` 文件，或
+   - 「**粘贴代码**」选项卡 → 粘贴 HTML 源代码
+
+**仅需**：现代浏览器（Chrome / Edge / Firefox / Safari 任一，包括 Win7 上的 Chrome 109）
+**无需**：Node.js、git、命令行、网络（解压后离线也能用）
+
+---
+
 It lets you open an AI-generated HTML page, click elements directly in the rendered page, adjust common styles, edit text, and export a cleaned HTML file. It is not trying to replace Vue, React, Webflow, or a professional IDE. Its job is narrower: help you finish the last 10% of a static HTML page visually.
 
 ## What It Does
