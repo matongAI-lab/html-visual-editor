@@ -1097,3 +1097,36 @@ test('hidden editor chrome does not block page clicks outside edit mode', async 
   expect(clicks.top).toBe(1)
   expect(clicks.rail).toBe(1)
 })
+
+test('allows native textarea resize while visual editing is active', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'chromium', 'Native textarea resize grip is verified on desktop Chromium')
+
+  await page.goto(`${baseURL}/index.html`)
+  await page.locator('[data-tab="paste"]').click()
+  await page.locator('#html-input').fill(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>body { margin: 0; padding: 120px 40px; font-family: sans-serif; }</style>
+</head>
+<body>
+  <label for="dd">Details</label>
+  <textarea id="dd" rows="6" style="width:60%;"></textarea>
+</body>
+</html>`)
+
+  await page.locator('#btn-start').click()
+  await ensureEditMode(page)
+
+  const before = await page.locator('#dd').boundingBox()
+  expect(before).not.toBeNull()
+
+  await page.mouse.move(before.x + before.width - 4, before.y + before.height - 4)
+  await page.mouse.down()
+  await page.mouse.move(before.x + before.width + 160, before.y + before.height + 120, { steps: 8 })
+  await page.mouse.up()
+
+  const after = await page.locator('#dd').boundingBox()
+  expect(after.width).toBeGreaterThan(before.width + 80)
+  expect(after.height).toBeGreaterThan(before.height + 60)
+})

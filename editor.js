@@ -2113,6 +2113,11 @@ body[data-ve-drag-active] *{cursor:grabbing!important}\
     if (isVE(e.target)) return
     if (state.textEditing && (e.target === state.textEditing || state.textEditing.contains(e.target))) return
     if (e.ctrlKey || e.altKey) return // Ctrl/Alt+click passes through to page
+    if (isTextareaResizeHandle(e)) {
+      selectElement(e.target)
+      state.nativeResizing = e.target
+      return
+    }
     // Drag mode: any mousedown on a draggable element starts a drag candidate.
     if (state.dragMode && isDraggableElement(e.target)) {
       e.preventDefault(); e.stopPropagation()
@@ -2134,7 +2139,23 @@ body[data-ve-drag-active] *{cursor:grabbing!important}\
     if (state.dragging) {
       finishDrag(e)
     }
+    if (state.nativeResizing) {
+      if (state.selected === state.nativeResizing) updateSelOverlay()
+      if (state.layoutOpen) renderPanel()
+      state.nativeResizing = null
+    }
     state.dragCandidate = null
+  }
+
+  function isTextareaResizeHandle(e) {
+    var target = e.target
+    if (!target || !target.tagName || target.tagName.toLowerCase() !== 'textarea') return false
+    var style = getComputedStyle(target)
+    if (style.resize === 'none') return false
+    var rect = target.getBoundingClientRect()
+    var grip = 18
+    return e.clientX >= rect.right - grip && e.clientX <= rect.right + 2 &&
+      e.clientY >= rect.bottom - grip && e.clientY <= rect.bottom + 2
   }
 
   // ========== Drag to Reorder ==========
